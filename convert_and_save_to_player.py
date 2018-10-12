@@ -3,6 +3,7 @@ import shutil
 
 from os import listdir
 from os.path import isfile, join
+from audioutils import *
 
 @click.command()
 @click.option('--source')
@@ -17,7 +18,7 @@ def run_tings_all_day_bb(
     bitrate,
     copy_non_sound):
 
-    (artist_dir, album_dir) = get_and_make_artist_and_album_dir(
+    (artist_dir, album_dir) = get_and_make_artist_and_album_dirs(
         source,
         target)
     c_and_w_song = lambda sfn: convert_and_write_song(
@@ -30,6 +31,7 @@ def run_tings_all_day_bb(
                       if isfile(join(source, fn))]
 
     for sfn in song_filenames:
+        source_format = get_name_and_format(sfn)[1]
         if source_format in {'mp3', 'flac', 'wav', 'mp4'}:
             c_and_w_song(sfn)
         elif copy_non_sound:
@@ -39,7 +41,6 @@ def run_tings_all_day_bb(
             shutil.copyfile(
                 source_file_path,
                 target_file_path)
-
 
 if __name__=='__main__':
     run_tings_all_day_bb()
