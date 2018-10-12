@@ -67,5 +67,7 @@ def get_name_and_format(song_path):
 def get_metadata(song_path):
 
     f = get_name_and_format(song_path)[1]
+    tag_dict = dict(ext2class[f](song_path).tags)
+    unlisted = {k : v[0] for (k,v) in tag_dict.items()}
     
-    return ext2class[f](song_path).info
+    return unlisted
