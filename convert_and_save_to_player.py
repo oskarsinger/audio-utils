@@ -1,9 +1,8 @@
 import click
 import shutil
 
-from pydub import AudioSegment
-from os import listdir, mkdir
-from os.path import isfile, join, splitext, exists
+from os import listdir
+from os.path import isfile, join
 
 @click.command()
 @click.option('--source')
@@ -15,45 +14,24 @@ def run_tings_all_day_bb(
     source,
     target,
     target_format,
-    bitrate):
+    bitrate,
+    copy_non_sound):
 
-    (artist, album) = source.split('/')[-2:]
-    artist_dir = join(target, artist)
-    album_dir = join(artist_dir, album)
-
-    if not exists(artist_dir):
-        mkdir(artist_dir)
-
-    if not exists(album_dir):
-        mkdir(album_dir)
-
+    (artist_dir, album_dir) = get_and_make_artist_and_album_dir(
+        source,
+        target)
+    c_and_w_song = lambda sfn: convert_and_write_song(
+        sfn,
+        album_dir,
+        target_format,
+        source,
+        bitrate)
     song_filenames = [fn for fn in listdir(source)
                       if isfile(join(source, fn))]
 
     for sfn in song_filenames:
-
-        source_song_path = join(source, sfn)
-        (name, source_format) = splitext(sfn)
-        source_format = source_format[1:]
-
-        if source_format in {'mp3', 'flac', 'wav', 'ogg'}:
-            target_fn = name + '.' + target_format
-            target_song_path = join(album_dir, target_fn)
-
-            print('Importing file:', source_song_path)
-
-            song = AudioSegment.from_file(
-                source_song_path, 
-                format=source_format)
-
-            print('Exporting file:', target_song_path)
-            
-            song.export(
-                target_song_path, 
-                format=target_format,
-                bitrate=bitrate)
-
-            print()
+        if source_format in {'mp3', 'flac', 'wav', 'mp4'}:
+            c_and_w_song(sfn)
         elif copy_non_sound:
             target_file_path = join(album_dir, sfn)
             source_file_path = join(source, sfn)
