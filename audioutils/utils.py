@@ -64,6 +64,13 @@ def get_name_and_format(song_path):
 
     return (name, song_format)
 
+def set_metadata(song_path, metadata):
+
+    f = get_name_and_format(song_path)[1]
+
+    if f == 'mp3':
+        pass
+
 def get_metadata(song_path):
 
     f = get_name_and_format(song_path)[1]
