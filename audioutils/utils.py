@@ -2,6 +2,7 @@ from mutagen.flac import FLAC
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 from mutagen.wavpack import WavPack
+from mutagen.easyid3 import EasyID3
 from pydub import AudioSegment
 
 from os import mkdir
@@ -38,8 +39,9 @@ def convert_and_write_song(
     song.export(
         target_song_path,
         format=target_format,
-        tags=metadata,
+        #tags=metadata,
         bitrate=bitrate)
+    set_metadata(target_song_path, metadata)
 
     print()
 
@@ -69,10 +71,21 @@ def set_metadata(song_path, metadata):
     f = get_name_and_format(song_path)[1]
 
     if f == 'mp3':
-        pass
+        id3 = EasyID3(song_path)
+        valid_md = {k : v for k, v in metadata.items()
+                    if k in EasyID3.valid_keys.keys()}
+
+        for k, v in valid_md.items():
+            id3[k] = v
+    else:
+        tags = ext2class[f](song_path)
+
+        for k, v in metadata.items():
+            tags[k] = v
 
 def get_metadata(song_path):
 
+    # TODO: account for APIC objects
     f = get_name_and_format(song_path)[1]
     tag_dict = dict(ext2class[f](song_path).tags)
     unlisted = {k : v[0] for (k,v) in tag_dict.items()}
