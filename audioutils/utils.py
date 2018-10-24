@@ -3,6 +3,7 @@ from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
 from mutagen.wavpack import WavPack
 from mutagen.easyid3 import EasyID3
+from mutagen.id3 import ID3
 from pydub import AudioSegment
 
 from os import mkdir
@@ -41,7 +42,10 @@ def convert_and_write_song(
         format=target_format,
         #tags=metadata,
         bitrate=bitrate)
-    set_metadata(target_song_path, metadata)
+    set_metadata(
+        target_song_path, 
+        metadata, 
+        source_format)
 
     print()
 
@@ -66,28 +70,47 @@ def get_name_and_format(song_path):
 
     return (name, song_format)
 
-def set_metadata(song_path, metadata):
+def set_metadata(song_path, metadata, source_format):
 
     f = get_name_and_format(song_path)[1]
+    source_mp3 = source_format == 'mp3'
+    target_mp3 = f == 'mp3'
+    tags = None
 
-    if f == 'mp3':
-        id3 = EasyID3(song_path)
-        valid_md = {k : v for k, v in metadata.items()
+    if source_mp3 and target_mp3:
+        tags = ID3(song_path)
+        
+        for t in metadata.values():
+            tags.add(t)
+
+    elif not source_mp3 and target_mp3:
+        tags = EasyID3(song_path)
+        metadata = {k : v for k, v in metadata.items()
                     if k in EasyID3.valid_keys.keys()}
 
-        for k, v in valid_md.items():
-            id3[k] = v
+        for k, v in metadata.items():
+            tags[k] = v
+
+    elif source_mp3 and not target_mp3:
+        tags = ext2class[f](song_path)
+
+        for k, v in metadata.items():
+            tags[k] = v.text 
+
     else:
         tags = ext2class[f](song_path)
 
         for k, v in metadata.items():
             tags[k] = v
 
+    tags.save()
+
 def get_metadata(song_path):
 
-    # TODO: account for APIC objects
     f = get_name_and_format(song_path)[1]
-    tag_dict = dict(ext2class[f](song_path).tags)
-    unlisted = {k : v[0] for (k,v) in tag_dict.items()}
+    tags = dict(ext2class[f](song_path).tags)
+
+    if not f == 'mp3':
+        tags = {k : v[0] for (k,v) in tags.items()}
     
-    return unlisted
+    return tags
