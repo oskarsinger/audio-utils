@@ -1,3 +1,5 @@
+import shutil
+
 from mutagen.flac import FLAC
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4
@@ -5,9 +7,10 @@ from mutagen.wavpack import WavPack
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3
 from pydub import AudioSegment
+from pathos.multiprocessing import ProcessPool as PP
 
-from os import mkdir
-from os.path import join, splitext, exists
+from os import mkdir, listdir
+from os.path import join, splitext, exists, isfile
 
 ext2class = {
     'flac': FLAC,
@@ -15,6 +18,57 @@ ext2class = {
     'mp4': MP4,
     'wav': WavPack
 }
+
+def convert_album(
+    album_dir,
+    target_format,
+    source,
+    bitrate,
+    copy_non_sound,
+    num_processes):
+
+    filenames = [fn for fn in listdir(source)
+                 if isfile(join(source, fn))]
+    caf = lambda fn: convert_album_file(
+        fn,
+        album_dir,
+        target_format,
+        source,
+        bitrate,
+        copy_non_sound)
+
+    if num_processes > 1:
+        PP(nodes=num_processes).map(
+            caf,
+            filenames)
+    else:
+        for fn in filenames:
+            caf(fn)
+
+def convert_album_file(
+    filename,
+    album_dir,
+    target_format,
+    source,
+    bitrate,
+    copy_non_sound):
+
+    source_format = get_name_and_format(filename)[1]
+
+    if source_format in {'mp3', 'flac', 'wav', 'mp4'}:
+        convert_and_write_song(
+            filename,
+            album_dir,
+            target_format,
+            source,
+            bitrate)
+    elif copy_non_sound:
+        target_file_path = join(album_dir, filename)
+        source_file_path = join(source, filename)
+        
+        shutil.copyfile(
+            source_file_path,
+            target_file_path)
 
 def convert_and_write_song(
     song_filename,
@@ -40,7 +94,6 @@ def convert_and_write_song(
     song.export(
         target_song_path,
         format=target_format,
-        #tags=metadata,
         bitrate=bitrate)
     set_metadata(
         target_song_path, 
