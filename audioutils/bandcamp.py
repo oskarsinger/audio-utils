@@ -7,9 +7,9 @@ from .io import get_and_make_artist_and_album_dirs
 
 def unzip_and_save_album(source, target):
 
-    name = splitext(basename(path))[0] 
+    name = splitext(basename(source))[0] 
     (artist, album) = name.split(' - ')
-    (_, target_album_path) = get_and_make_arist_and_album_dirs(
+    (_, target_album_path) = get_and_make_artist_and_album_dirs(
         artist,
         album,
         target)
