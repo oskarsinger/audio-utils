@@ -5,8 +5,8 @@ from mutagen.wavpack import WavPack
 from mutagen.id3 import ID3
 from mutagen.easyid3 import EasyID3
 
-from os import mkdir
-from os.path import join, splitext, exists
+from os import mkdir, system
+from os.path import join, splitext
 
 ext2class = {
     'flac': FLAC,
@@ -14,20 +14,6 @@ ext2class = {
     'mp4': MP4,
     'wav': WavPack
 }
-
-def get_and_make_artist_and_album_dirs(source, target):
-
-    (artist, album) = source.split('/')[-2:]
-    artist_dir = join(target, artist)
-    album_dir = join(artist_dir, album)
-
-    if not exists(artist_dir):
-        mkdir(artist_dir)
-
-    if not exists(album_dir):
-        mkdir(album_dir)
-
-    return (artist_dir, album_dir)
 
 def get_name_and_format(song_path):
 
