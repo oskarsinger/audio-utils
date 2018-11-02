@@ -17,3 +17,5 @@ def unzip_and_save_album(source, target):
     with zipfile.ZipFile(source, 'r') as f:
 
         f.extractall(target_album_path)
+
+    os.remove(source)
