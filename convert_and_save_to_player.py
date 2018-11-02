@@ -1,6 +1,7 @@
 import click
 
-from audioutils import *
+from audioutils.metadata import get_and_make_artist_and_album_dirs
+from audioutils.conversion import convert_album
 
 @click.command()
 @click.option('--source')
