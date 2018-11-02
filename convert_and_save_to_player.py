@@ -1,6 +1,6 @@
 import click
 
-from audioutils.metadata import get_and_make_artist_and_album_dirs
+from audioutils.io import get_and_make_artist_and_album_dirs
 from audioutils.conversion import convert_album
 
 @click.command()
@@ -18,8 +18,10 @@ def run_tings_all_day_bb(
     copy_non_sound,
     num_processes):
 
+    (artist, album) = source.split('/')[-2:]
     (artist_dir, album_dir) = get_and_make_artist_and_album_dirs(
-        source,
+        artist,
+        album,
         target)
     convert_album(
         album_dir,
