@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import click
 
 from audioutils.io import get_and_make_artist_and_album_dirs
