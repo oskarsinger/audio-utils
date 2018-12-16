@@ -8,11 +8,13 @@ from pathos.multiprocessing import ProcessPool as PP
 from os import listdir
 from os.path import join, isfile
 
-from .metadata import (
+from audioutils.metadata import (
     get_name_and_format,
     set_metadata,
     get_metadata
 )
+
+#TODO: hold back on things that haven't been cut with .cue files
 
 def convert_album(
     album_dir,
