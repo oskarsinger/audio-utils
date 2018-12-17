@@ -23,6 +23,7 @@ def get_remote_only_files(dbx, media_dir, dbx_dir):
                   if isdir(p)}
     dbx_dirs = get_all_dirs(dbx, dbx_dir)
     remote_only_dirs = set(dbx_dirs).difference(local_dirs)
+
     remote_only_files = {}
 
     for d in remote_only_dirs:
@@ -38,7 +39,19 @@ def get_all_dirs(dbx, root):
     queue = [root]
     paths = []
 
-    while 
+    while len(queue) > 0:
+        current = queue[0]
+        listdir = get_full_listdir(dbx, current)
+        dirs = [metadata for metadata in listdir
+                if type(metadata) == FolderMetadata]
+        current_paths = [join(current, d.name) for d in dirs]
+
+        paths.extend(current_paths)
+        queue.extend(current_paths)
+
+        queue = queue[1:]
+
+    return paths
 
 
 def get_all_files(dbx, root):
