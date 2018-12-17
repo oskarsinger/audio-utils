@@ -118,7 +118,10 @@ def upload(ctx):
     with open(new_registry_path) as f:
         new_registry = [line.strip() for line in f]
 
-    # TODO: upload stuff to Dropbox
+    for dir_name in new_registry:
+        song = None
+        dbx.files_upload(blah, blah, blah)
+        # TODO: upload stuff to Dropbox
 
     with open(registry_path, 'a') as f:
         f.write('\n'.join(new_registry))
