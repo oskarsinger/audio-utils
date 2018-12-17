@@ -8,15 +8,24 @@ from collection import defaultdict
 from shutil import move
 
 from audioutils.io import unzip_and_save_bandcamp_album
+from audioutils.metadata import get_metadata
 from audioutils.dropbox import (
     get_all_files,
-    get_full_listdir
+    get_full_listdir,
+    upload_files
 )
+
+
+DBX_MUSIC_DIR = '/Music'
+
 
 @click.group()
 @click.option('--media-dir')
 @click.pass_context
 def dropbox_cli(ctx, media_dir):
+
+    if media_dir[-1] == '/':
+        media_dir = media_dir[:-1]
 
     ctx.obj['media_dir'] = media_dir 
     
@@ -49,6 +58,7 @@ def dropbox_cli(ctx, media_dir):
         registry = [line.strip() for line in f]
 
     ctx.obj['registry'] = registry
+
 
 # TODO: maybe add a warning for artists that might already exist
 @dropbox_cli.command()
@@ -118,13 +128,17 @@ def upload(ctx):
     with open(new_registry_path) as f:
         new_registry = [line.strip() for line in f]
 
-    for dir_name in new_registry:
-        song = None
-        dbx.files_upload(blah, blah, blah)
-        # TODO: upload stuff to Dropbox
+    upload_files(
+        dbx,
+        ctx.obj['media_dir'],
+        new_registry,
+        DBX_MUSIC_DIR
+    )
 
     with open(registry_path, 'a') as f:
         f.write('\n'.join(new_registry))
+
+    os.remove(new_registry_path)
     
 
 @dropbox_cli.command()
@@ -134,7 +148,7 @@ def download(ctx):
     remote_only_files = get_remote_only_files(
         ctx.obj['dbx'],
         ctx.obj['media_dir'],
-        '/Music'
+        DBX_MUSIC_DIR
     )
 
     for (dbx_path, files) in remote_only_files.items():
