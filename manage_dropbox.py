@@ -8,6 +8,10 @@ from collection import defaultdict
 from shutil import move
 
 from audioutils.io import unzip_and_save_bandcamp_album
+from audioutils.dropbox import (
+    get_all_files,
+    get_full_listdir
+)
 
 @click.group()
 @click.option('--media-dir')
@@ -46,6 +50,7 @@ def dropbox_cli(ctx, media_dir):
 
     ctx.obj['registry'] = registry
 
+# TODO: maybe add a warning for artists that might already exist
 @dropbox_cli.command()
 @click.option('--source')
 @click.option('--bandcamp', default=False, type=bool)
@@ -66,21 +71,16 @@ def update(ctx, source, bandcamp):
             'mp4',
             'wav'
         }
-        song_path = None
 
-        for root, _, filenames in os.walk(source):
-            for fn in filenames:
-                ext = splitext(fn)[1][1:]
+        paths = [join(root, fn) 
+                 for root, _, filenames in os.walk(source)
+                 for fn in filenames
+                 if splitext(fn)[1][1:] in formats]
 
-                if ext in formats:
-                    song_path = join(root, fn)
-
-                    break
-
-        if not song_path:
+        if len(paths) == 0:
             raise Exception('No valid file formats in source dir!')
                     
-        metadata = get_metadata(song_path)
+        metadata = get_metadata(paths[0])
         artist = metadata['artist']
         source_dir_name = basename(dirname(source))
         target = join(
@@ -128,9 +128,25 @@ def upload(ctx):
 @click.pass_context
 def download(ctx):
     
-    # TODO: find stuff that isn't in media dir
-    # TODO: download that stuff
-    # TODO: update registry
+    remote_only_files = get_remote_only_files(
+        ctx.obj['dbx'],
+        ctx.obj['media_dir'],
+        '/Music'
+    )
+
+    for (dbx_path, files) in remote_only_files.items():
+        save_path = join(ctx.obj['media_dir'], dbx_path)
+
+        os.makedirs(
+            save_path,
+            exist_ok=True)
+
+        for f in files:
+            dbx.files_download_to_file(
+                save_path, 
+                dbx_path
+            )
+
     
 if __name__=='__main__':
     dropbox_cli(obj={})
