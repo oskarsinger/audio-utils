@@ -89,10 +89,10 @@ def update(ctx, source, bandcamp):
             source_dir_name
         )
 
-        os.makedirs(target, exist_ok=True)
+        os.makedirs(target)
         move(source, target)
 
-    new_registry_path = os.path.join(
+    new_registry_path = join(
         ctx.obj['media_dir'],
         'registry.list.new'
     )
@@ -105,7 +105,7 @@ def update(ctx, source, bandcamp):
 @click.pass_context
 def upload(ctx):
 
-    registry_path = os.path.join(
+    registry_path = join(
         ctx.obj['media_dir'],
         'registry.list'
     )
@@ -137,14 +137,18 @@ def download(ctx):
     for (dbx_path, files) in remote_only_files.items():
         save_path = join(ctx.obj['media_dir'], dbx_path)
 
-        os.makedirs(
-            save_path,
-            exist_ok=True)
+        if not exists(save_path):
+            os.makedirs(save_path)
 
-        for f in files:
+        save_paths = [join(save_path, f.name)
+                      for f in files]
+        not_exists = [sp for sp in save_paths
+                      if not exists(save_paths)]
+
+        for (f, p) in zip(files, not_exists):
             dbx.files_download_to_file(
-                save_path, 
-                dbx_path
+                p, 
+                join(dbx_path, f.name)
             )
 
     
