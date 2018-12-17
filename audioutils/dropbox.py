@@ -8,6 +8,30 @@ from dropbox.files import (
 )
 
 
+MAX_MEGABYTES = 150
+
+
+def upload_files(dbx, media_dir, local_paths, dbx_dir):
+    
+    lmd = len(media_dir)
+
+    for lp in local_paths:
+        size = os.stat(lp).st_size
+        megabytes = size / 10**6
+
+        if megabytes > MAX_MEGABYTES:
+            print(
+                'FILE {} EXCEEDS MAX REQUEST SIZE WITH {}MB AND WILL NOT BE UPLOADED.' % 
+                (lp, megabytes)
+            )
+        else:
+            with open(lp, 'rb') as f:
+                dbx.files_upload(
+                    f,
+                    lp[lmd:]
+                )
+
+
 def get_remote_only_files(dbx, media_dir, dbx_dir):
 
     search_path = join(
@@ -15,71 +39,30 @@ def get_remote_only_files(dbx, media_dir, dbx_dir):
         '**',
         '*'
     )
-    result_paths = glog.glob(
+    local_paths = glog.glob(
         search_path,
         recursive=True
     )
-    local_dirs = {p for p in result_paths
-                  if isdir(p)}
-    dbx_dirs = get_all_dirs(dbx, dbx_dir)
-    remote_only_dirs = set(dbx_dirs).difference(local_dirs)
+    local_paths_lower = [p.lower()[len(media_dir):] 
+                         for p in local_paths]
+    dbx_files = get_all_files(dbx, dbx_dir)
+    dbx_paths = [f.path_lower for f in dbx_files]
 
-    remote_only_files = {}
-
-    for d in remote_only_dirs:
-        all_files_d = get_all_files(dbx, d)
-
-        remote_only_files.update(all_files_d)
-
-    return remote_only_files
-
-
-def get_all_dirs(dbx, root):
-
-    queue = [root]
-    paths = []
-
-    while len(queue) > 0:
-        current = queue[0]
-        listdir = get_full_listdir(dbx, current)
-        dirs = [metadata for metadata in listdir
-                if type(metadata) == FolderMetadata]
-        current_paths = [join(current, d.name) for d in dirs]
-
-        paths.extend(current_paths)
-        queue.extend(current_paths)
-
-        queue = queue[1:]
-
-    return paths
+    return set(dbx_paths).difference(local_paths_lower)
 
 
 def get_all_files(dbx, root):
 
-    queue = [root]
     path2files = {}
+    listdir = get_full_listdir(dbx, current, recursive=True)
 
-    while len(queue) > 0:
-        current = queue[0]
-        listdir = get_full_listdir(dbx, current)
-        files = [metadata for metadata in listdir
-                 if type(metadata) == FileMetadata]
-        dirs = [metadata for metadata in listdir
-                if type(metadata) == FolderMetadata]
-
-        path2files[current] = files
-        queue.extend([
-            os.path.join(current, d.name) for d in dirs
-        ])
-
-        queue = queue[1:]
-
-    return path2files
+    return [metadata for metadata in listdir
+            if type(metadata) == FileMetadata]
 
 
-def get_full_listdir(dbx, root):
+def get_full_listdir(dbx, root, recursive=False):
 
-    listdir = dbx.file_list_folder(root) 
+    listdir = dbx.files_list_folder(root, recursive=recursive)
     entries = listdir.entries
 
     while listdir.has_more:
