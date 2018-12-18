@@ -130,7 +130,7 @@ def upload(ctx):
         new_registry = [line.strip() for line in f]
 
     upload_files(
-        dbx,
+        ctx.job['dbx'],
         ctx.obj['media_dir'],
         new_registry,
         DBX_MUSIC_DIR
@@ -157,11 +157,11 @@ def download(ctx):
             ctx.obj['media_dir'], 
             dbx_path[1:]
         )
-        print('Downloading {} to {}'.format(dbx_path, save_path))
+        print('Downloading\n\t{}\n\tto\n\t{}'.format(dbx_path, save_path))
 
         os.makedirs(dirname(save_path), exist_ok=True)
 
-        dbx.files_download_to_file(
+        ctx.obj['dbx'].files_download_to_file(
             save_path, 
             dbx_path
         )
