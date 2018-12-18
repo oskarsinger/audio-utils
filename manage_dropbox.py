@@ -153,7 +153,11 @@ def download(ctx):
     )
 
     for dbx_path in remote_only_files:
-        save_path = join(ctx.obj['media_dir'], dbx_path)
+        save_path = join(
+            ctx.obj['media_dir'], 
+            dbx_path[1:]
+        )
+        print('Downloading {} to {}'.format(dbx_path, save_path))
 
         os.makedirs(dirname(save_path), exist_ok=True)
 
