@@ -4,7 +4,7 @@ import os
 import pathlib
 
 from os.path import basename, dirname, join, exists
-from collection import defaultdict
+from collections import defaultdict
 from shutil import move
 
 from audioutils.io import unzip_and_save_bandcamp_album
@@ -12,6 +12,7 @@ from audioutils.metadata import get_metadata
 from audioutils.dropbox import (
     get_all_files,
     get_full_listdir,
+    get_remote_only_files,
     upload_files
 )
 
@@ -52,7 +53,7 @@ def dropbox_cli(ctx, media_dir):
     )
     registry = None
 
-    os.open(registry_path, 'a').close()
+    open(registry_path, 'a').close()
 
     with open(registry_path) as f:
         registry = [line.strip() for line in f]
@@ -144,29 +145,22 @@ def upload(ctx):
 @dropbox_cli.command()
 @click.pass_context
 def download(ctx):
-    
+
     remote_only_files = get_remote_only_files(
         ctx.obj['dbx'],
         ctx.obj['media_dir'],
         DBX_MUSIC_DIR
     )
 
-    for (dbx_path, files) in remote_only_files.items():
+    for dbx_path in remote_only_files:
         save_path = join(ctx.obj['media_dir'], dbx_path)
 
-        if not exists(save_path):
-            os.makedirs(save_path)
+        os.makedirs(dirname(save_path), exist_ok=True)
 
-        save_paths = [join(save_path, f.name)
-                      for f in files]
-        not_exists = [sp for sp in save_paths
-                      if not exists(save_paths)]
-
-        for (f, p) in zip(files, not_exists):
-            dbx.files_download_to_file(
-                p, 
-                join(dbx_path, f.name)
-            )
+        dbx.files_download_to_file(
+            save_path, 
+            dbx_path
+        )
 
     
 if __name__=='__main__':

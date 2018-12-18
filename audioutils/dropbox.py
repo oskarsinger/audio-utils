@@ -1,4 +1,5 @@
 import os
+import glob
 
 from os.path import join, isdir
 
@@ -39,7 +40,7 @@ def get_remote_only_files(dbx, media_dir, dbx_dir):
         '**',
         '*'
     )
-    local_paths = glog.glob(
+    local_paths = glob.glob(
         search_path,
         recursive=True
     )
@@ -54,7 +55,11 @@ def get_remote_only_files(dbx, media_dir, dbx_dir):
 def get_all_files(dbx, root):
 
     path2files = {}
-    listdir = get_full_listdir(dbx, current, recursive=True)
+    listdir = get_full_listdir(
+        dbx, 
+        root, 
+        recursive=True
+    )
 
     return [metadata for metadata in listdir
             if type(metadata) == FileMetadata]

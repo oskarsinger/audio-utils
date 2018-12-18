@@ -3,7 +3,6 @@ import zipfile
 
 from os.path import basename, splitext, join, exists
 
-from audioutils.io import get_and_make_artist_and_album_dirs
 
 def get_and_make_artist_and_album_dirs(artist, album, target):
 
