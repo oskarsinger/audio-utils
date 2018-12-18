@@ -15,9 +15,15 @@ from audioutils.dropbox import (
     get_remote_only_files,
     upload_files
 )
+from audioutils.db.utils import dropbox_download_file
+from audioutils.db.session import get_session_maker
 
 
 DBX_MUSIC_DIR = '/Music'
+POSTGRES_USER = None
+POSTGRES_PASSWORD = None
+POSTGRES_HOST = None
+POSTGRES_DB = None
 
 
 @click.group()
@@ -46,19 +52,12 @@ def dropbox_cli(ctx, media_dir):
     dbx = dropbox.Dropbox(oauth_key)
 
     ctx.obj['dbx'] = dbx
-
-    registry_path = join(
-        media_dir, 
-        'registry.list'
+    ctx.obj['get_session'] = get_session_maker(
+        POSTGRES_USER,
+        POSTGRES_PASSWORD,
+        POSTGRES_HOST,
+        POSTGRES_DB
     )
-    registry = None
-
-    open(registry_path, 'a').close()
-
-    with open(registry_path) as f:
-        registry = [line.strip() for line in f]
-
-    ctx.obj['registry'] = registry
 
 
 # TODO: maybe add a warning for artists that might already exist
@@ -161,7 +160,13 @@ def download(ctx):
 
         os.makedirs(dirname(save_path), exist_ok=True)
 
-        ctx.obj['dbx'].files_download_to_file(
+        dropbox_download_file(
+            ctx.obj['dbx'],
+            dbx_path,
+            ctx.obj['get_session'],
+            ctx.obj['media_dir']
+        )
+        .files_download_to_file(
             save_path, 
             dbx_path
         )
