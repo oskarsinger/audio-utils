@@ -13,6 +13,22 @@ class IncompleteDropboxDownload(Base):
     insertion_time = Column(DateTime)
 
 
+class IncompleteDropboxUpload(Base):
+
+    __tablename__ = 'incomplete_dropbox_upload'
+
+    local_path = Column(String, primary_key=True)
+    insertion_time = Column(DateTime)
+
+
+class FailedDropboxUpload(Base):
+
+    __tablename__ = 'failed_dropbox_upload'
+
+    local_path = Column(String, primary_key=True)
+    insertion_time = Column(DateTime)
+
+
 class IncompleteMP3Transfer(Base):
 
     __tablename__ = 'incomplete_mp3_transfer'

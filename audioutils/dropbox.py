@@ -9,30 +9,6 @@ from dropbox.files import (
 )
 
 
-MAX_MEGABYTES = 150
-
-
-def upload_files(dbx, media_dir, local_paths, dbx_dir):
-    
-    lmd = len(media_dir)
-
-    for lp in local_paths:
-        size = os.stat(lp).st_size
-        megabytes = size / 10**6
-
-        if megabytes > MAX_MEGABYTES:
-            print(
-                'FILE {} EXCEEDS MAX REQUEST SIZE WITH {}MB AND WILL NOT BE UPLOADED.' % 
-                (lp, megabytes)
-            )
-        else:
-            with open(lp, 'rb') as f:
-                dbx.files_upload(
-                    f,
-                    lp[lmd:]
-                )
-
-
 def get_remote_only_files(dbx, media_dir, dbx_dir):
 
     search_path = join(
