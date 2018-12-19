@@ -6,14 +6,15 @@ from dropbox.exceptions import ApiError
 from audioutils.db.tables import (
     IncompleteDropboxDownload,
     Registry,
-    TooLargeDropboxUpload
+    TooLargeDropboxUpload,
+    ToDropboxUpload
 )
 
 
 MAX_MEGABYTES = 150
 
 
-def upload_dropbox_file(dbx, local_path, get_session, media_dir):
+def dropbox_upload_file(dbx, local_path, get_session, media_dir):
 
     lmd = len(media_dir) 
     file_size = os.stat(local_path).st_size
@@ -37,13 +38,6 @@ def upload_dropbox_file(dbx, local_path, get_session, media_dir):
                 **row
             )
     else:
-        with get_session() as session:
-            insert_if_not_exists(
-                session,
-                IncompleteDropboxUpload,
-                **row
-            )
-
         print('UPLOADING FILE:', local_path)
 
         try:
@@ -54,8 +48,8 @@ def upload_dropbox_file(dbx, local_path, get_session, media_dir):
                 )
 
             with get_session() as session:
-                session.query(IncompleteDropboxDownload).filter(
-                    IncompleteDropboxDownload.dbx_path == dbx_path
+                session.query(ToDropboxUpload).filter(
+                    ToDropboxUpload.local_path == local_path
                 ).delete()
         except ApiError as apie:
             print(
