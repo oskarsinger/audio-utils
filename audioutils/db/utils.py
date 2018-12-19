@@ -1,16 +1,76 @@
 import datetime
 
 from sqlalchemy.dialects.postgresql import insert
+from dropbox.exceptions import ApiError
 
 from audioutils.db.tables import (
-    IncompleteDownload,
-    Registry
+    IncompleteDropboxDownload,
+    Registry,
+    TooLargeDropboxUpload
 )
 
 
-def upload_dropbox_file(dbx, dbx_path, get_session, media_dir):
+MAX_MEGABYTES = 150
 
-    pass 
+
+def upload_dropbox_file(dbx, local_path, get_session, media_dir):
+
+    lmd = len(media_dir) 
+    file_size = os.stat(local_path).st_size
+    megabytes = size / 10**6
+
+    row = {
+        'local_path': local_path,
+        'insertion_time': datetime.datetime.now()
+    }
+
+    if megabytes > MAX_MEGABYTES:
+        print(
+            'FILE {} EXCEEDS MAX REQUEST SIZE WITH {}MB AND WILL NOT BE UPLOADED.' % 
+            (lp, megabytes)
+        )
+
+        with get_session() as session:
+            insert_if_not_exists(
+                session,
+                TooLargeDropboxUpload,
+                **row
+            )
+    else:
+        with get_session() as session:
+            insert_if_not_exists(
+                session,
+                IncompleteDropboxUpload,
+                **row
+            )
+
+        print('UPLOADING FILE:', local_path)
+
+        try:
+            with open(local_path, as 'rb') as f:
+                dbx.files_upload(
+                    f,
+                    local_path[lmd:]
+                )
+
+            with get_session() as session:
+                session.query(IncompleteDropboxDownload).filter(
+                    IncompleteDropboxDownload.dbx_path == dbx_path
+                ).delete()
+        except ApiError as apie:
+            print(
+                'FAILED TO UPLOAD FILE {} because of {}'.format(
+                    local_path, 
+                    apie.user_message_text
+                )
+            )
+
+            with get_session() as session:
+                insert_if_not_exists(
+                    session,
+                    FailedDropboxUpload,
+                    **row
+                )
 
 
 def download_dropbox_file(dbx, dbx_path, get_session, media_dir):
@@ -20,11 +80,10 @@ def download_dropbox_file(dbx, dbx_path, get_session, media_dir):
         'insertion_time': datetime.datetime.now()
     }
 
-    # TODO: check if doc is in 
     with get_session() as session:
         insert_if_not_exists(
             session,
-            IncompleteDownload,
+            IncompleteDropboxDownload,
             **row
         )
 
@@ -38,8 +97,8 @@ def download_dropbox_file(dbx, dbx_path, get_session, media_dir):
     print('RESPONSE TEXT:', response.text)
 
     with get_session() as session:
-        session.query(IncompleteDownload).filter(
-            IncompleteDownload.dbx_path == dbx_path
+        session.query(IncompleteDropboxDownload).filter(
+            IncompleteDropboxDownload.dbx_path == dbx_path
         ).delete()
 
         row['insertion_time'] = datetime.datetime.now()
