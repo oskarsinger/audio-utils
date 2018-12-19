@@ -12,10 +12,12 @@ from audioutils.metadata import get_metadata
 from audioutils.dropbox import (
     get_all_files,
     get_full_listdir,
-    get_remote_only_files,
-    upload_files
+    get_remote_only_files
 )
-from audioutils.db.utils import dropbox_download_file
+from audioutils.db.utils import (
+    dropbox_download_file,
+    dropbox_upload_file
+)
 from audioutils.db.session import get_session_maker
 
 
@@ -115,31 +117,19 @@ def update(ctx, source, bandcamp):
 @click.pass_context
 def upload(ctx):
 
-    registry_path = join(
-        ctx.obj['media_dir'],
-        'registry.list'
-    )
-    new_registry_path = registry_path + '.new'
-    new_registry = None
+    rows = None
 
-    if not exists(new_registry_path):
-        raise Exception('No new files to upload!')
+    with ctx.obj['get_session']() as session:
+        rows = session.query(ToDropboxUpload).all()
 
-    with open(new_registry_path) as f:
-        new_registry = [line.strip() for line in f]
+    for r in rows:
+        dropbox_upload_file(
+            ctx.job['dbx'],
+            r.local_path,
+            ctx.obj['get_session'],
+            ctx.obj['media_dir']
+        )
 
-    upload_files(
-        ctx.job['dbx'],
-        ctx.obj['media_dir'],
-        new_registry,
-        DBX_MUSIC_DIR
-    )
-
-    with open(registry_path, 'a') as f:
-        f.write('\n'.join(new_registry))
-
-    os.remove(new_registry_path)
-    
 
 @dropbox_cli.command()
 @click.pass_context
