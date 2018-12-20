@@ -11,10 +11,12 @@ from os.path import join, isfile
 from audioutils.metadata import (
     get_name_and_format,
     set_metadata,
-    get_metadata
+    get_metadata,
+    MUSIC_FILETYPES
 )
 
-#TODO: hold back on things that haven't been cut with .cue files
+# TODO: hold back on things that haven't been cut with .cue files
+# TODO: simple length-in-seconds of music file might be a good filter
 
 def convert_album(
     album_dir,
@@ -52,7 +54,7 @@ def convert_album_file(
 
     source_format = get_name_and_format(filename)[1]
 
-    if source_format in {'mp3', 'flac', 'wav', 'mp4'}:
+    if source_format in MUSIC_FILETYPES:
         convert_and_write_song(
             filename,
             album_dir,

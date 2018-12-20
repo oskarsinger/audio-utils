@@ -12,12 +12,17 @@ from audioutils.db.tables import (
     FailedDropboxUpload
     IncompleteDropboxDownload,
     FailedDropboxDownload,
-    Registry,
-    TooLargeDropboxUpload
+    TooLargeDropboxUpload,
+    SongRegistry,
+    AlbumArtRegistry
 )
 from audioutils.db.utils import (
     get_safe_load,
     insert_if_not_exists
+)
+from audioutils.metadata import (
+    get_metadata,
+    MUSIC_FILETYPES
 )
 
 
@@ -25,25 +30,21 @@ MAX_MEGABYTES = 150
 
 
 dropbox_upload_file = get_safe_load(
+    unsafe_dropbox_upload_file,
     IncompleteDropboxUpload,
     FailedDropboxUpload
 )
 
 
-def unsafe_dropbox_upload_file(dbx, local_path, get_session, media_dir):
+def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
 
     lmd = len(media_dir) 
-    file_size = os.stat(local_path).st_size
+    file_size = os.stat(row['path']).st_size
     megabytes = size / 10**6
-
-    row = {
-        'local_path': local_path,
-        'insertion_time': datetime.datetime.now()
-    }
 
     if megabytes > MAX_MEGABYTES:
         error_message = 'FILE {} EXCEEDS MAX REQUEST SIZE WITH {}MB.'.format(
-            lp, 
+            row['path'], 
             megabytes
         )
         row['size'] = file_size
@@ -57,38 +58,57 @@ def unsafe_dropbox_upload_file(dbx, local_path, get_session, media_dir):
 
         raise Exception(error_message)
     else:
-        with open(local_path, as 'rb') as f:
+        with open(row['path'], as 'rb') as f:
             dbx.files_upload(
                 f,
-                local_path[lmd:]
+                row['path'][lmd:]
             )
 
 
-dropbox_download_file = 
+dropbox_download_file = get_safe_load(
+    unsafe_dropbox_download_file,
+    IncompleteDropboxDownload,
+    FailedDropboxDownload
+)
 
 
-def unsafe_dropbox_download_file(dbx, dbx_path, get_session, media_dir):
-
-    row = {
-        'dbx_path': dbx_path,
-        'insertion_time': datetime.datetime.now()
-    }
+def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
 
     print('DOWNLOADING FILE:', dbx_path)
 
     (_, response) = dbx.files_download_to_file(
-        os.path.join(media_dir, dbx_path[1:]),
-        dbx_path
+        os.path.join(media_dir, row['path'][1:]),
+        row['path']
     )
     # TODO: probably raise exception if this goes wrong; need to learn about these status codes
     print('RESPONSE STATUS CODE:', response.status_code)
     print('RESPONSE TEXT:', response.text)
 
-    # TODO: this needs to pull out music file metadata and accordingly populate db row
-    if is_music_file:
+    (head, ext) = os.path.splitext(row['path'])
+    row['file_type'] = ext[1:]
+    registry = None
 
-        with get_session() as session:
-            session.query(Registry).insert(**row)
+    if ext[1:] in MUSIC_FILETYPES:
+        metadata = get_metadata(row['path'])
+        registry = SongRegistry
+
+        row['artist'] = metadata['artist']
+        row['album'] = metadata['album']
+        row['album_artist'] = metadata['album_artist']
+        row['song'] = metadata['song']
+        row['track_number'] = metadata['track_number']
+    elif ext[1:] in {'jpeg', 'png'} and head.endswith('cover'):
+        registry = AlbumArtRegistry
+
+        # TODO: how to get artist and album for this?
+        # TODO: might have to search path for music file and pull out metadata
+        row['artist'] = None
+        row['album'] = None
+    else:
+        registry = OtherRegistry
+
+    with get_session() as session:
+        session.query(registry).insert(**row)
 
 
 def get_remote_only_files(dbx, media_dir, dbx_dir):

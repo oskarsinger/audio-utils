@@ -6,8 +6,12 @@ from dropbox.exceptions import ApiError
 
 def get_safe_load(do_load, incomplete_table_class, failed_table_class):
 
-    def safe_load(dbx, path, get_session, **do_load_args):
+    def safe_load(dbx, path, get_session, media_dir):
 
+        row = {
+            'path': path,
+            'insertion_time'
+        }
         row['insertion_time'] = datetime.datetime.now()
 
         with get_session() as session:
@@ -18,11 +22,11 @@ def get_safe_load(do_load, incomplete_table_class, failed_table_class):
             )
 
         try:
-            do_load(dbx, path, get_session, **do_load_args)
+            do_load(dbx, path, get_session, media_dir)
         except Exception as e:
             print(
                 'FAILED TO LOAD {} due to {}'.format(
-                    row['path'],
+                    path,
                     str(e)
                 )
             )
