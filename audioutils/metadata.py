@@ -10,12 +10,13 @@ from mutagen.easyid3 import EasyID3
 from os import mkdir, system
 from os.path import join, splitext
 
-ext2class = {
+extension2class = {
     'flac': FLAC,
     'mp3': MP3,
     'mp4': MP4,
     'wav': WavPack
 }
+MUSIC_FILETYPES = {k for k in extension2class.keys()}
 
 def get_name_and_format(song_path):
 
@@ -46,13 +47,13 @@ def set_metadata(song_path, metadata, source_format):
             tags[k] = v
 
     elif source_mp3 and not target_mp3:
-        tags = ext2class[f](song_path)
+        tags = extension2class[f](song_path)
 
         for k, v in metadata.items():
             tags[k] = v.text 
 
     else:
-        tags = ext2class[f](song_path)
+        tags = extension2class[f](song_path)
 
         for k, v in metadata.items():
             tags[k] = v
@@ -62,7 +63,7 @@ def set_metadata(song_path, metadata, source_format):
 def get_metadata(song_path):
 
     f = get_name_and_format(song_path)[1]
-    tags = dict(ext2class[f](song_path).tags)
+    tags = dict(extension2class[f](song_path).tags)
 
     if not f == 'mp3':
         tags = {k : v[0] for (k,v) in tags.items()}

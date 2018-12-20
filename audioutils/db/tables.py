@@ -60,14 +60,52 @@ class TooLargeDropboxUpload(Base):
     insertion_time = Column(DateTime)
 
 
-class Registry(Base):
+class SongRegistry(Base):
 
-    __table__ = 'registry'
+    __table__ = 'song_registry'
 
-    local_path = Column(String, primary_key=True)
+    path = Column(String, primary_key=True)
     artist = Column(String)
     album = Column(String)
     album_artist = Column(String)
     song = Column(String)
     track_number = Column(Integer)
+    file_type = Column(String)
+    insertion_time = Column(DateTime)
+
+
+class AlbumArtRegistry(Base):
+
+    __table__ = 'album_art_registry'
+
+    path = Column(String, primary_key=True)
+    artist = Column(String)
+    album = Column(String)
+    file_type = Column(String)
+    insertion_time = Column(DateTime)
+
+
+class AlbumRegistry(Base):
+    
+    __table__ = 'album_registry'
+
+    album = Column(String, primary_key=True)
+    artist = Column(String, primary_key=True)
+    insertion_time = Column(DateTime)
+
+
+class ArtistRegistry(Base):
+
+    __table__ = 'artist_registry'
+
+    artist = Column(String, primary_key=True)
+    insertion_time = Column(DateTime)
+
+
+class OtherRegistry(Base):
+
+    __table__ = 'other_registry'
+
+    path = Column(String, primary_key=True)
+    file_type = Column(String)
     insertion_time = Column(DateTime)
