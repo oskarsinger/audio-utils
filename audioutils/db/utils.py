@@ -3,101 +3,45 @@ import datetime
 from sqlalchemy.dialects.postgresql import insert
 from dropbox.exceptions import ApiError
 
-from audioutils.db.tables import (
-    IncompleteDropboxDownload,
-    Registry,
-    TooLargeDropboxUpload,
-    ToDropboxUpload
-)
 
+def get_safe_load(do_load, incomplete_table_class, failed_table_class):
 
-MAX_MEGABYTES = 150
+    def safe_load(dbx, path, get_session, **do_load_args):
 
-
-def dropbox_upload_file(dbx, local_path, get_session, media_dir):
-
-    lmd = len(media_dir) 
-    file_size = os.stat(local_path).st_size
-    megabytes = size / 10**6
-
-    row = {
-        'local_path': local_path,
-        'insertion_time': datetime.datetime.now()
-    }
-
-    if megabytes > MAX_MEGABYTES:
-        print(
-            'FILE {} EXCEEDS MAX REQUEST SIZE WITH {}MB AND WILL NOT BE UPLOADED.' % 
-            (lp, megabytes)
-        )
+        row['insertion_time'] = datetime.datetime.now()
 
         with get_session() as session:
             insert_if_not_exists(
                 session,
-                TooLargeDropboxUpload,
+                incomplete_table_class,
                 **row
             )
-    else:
-        print('UPLOADING FILE:', local_path)
 
         try:
-            with open(local_path, as 'rb') as f:
-                dbx.files_upload(
-                    f,
-                    local_path[lmd:]
-                )
-
-            with get_session() as session:
-                session.query(ToDropboxUpload).filter(
-                    ToDropboxUpload.local_path == local_path
-                ).delete()
-        except ApiError as apie:
+            do_load(dbx, path, get_session, **do_load_args)
+        except Exception as e:
             print(
-                'FAILED TO UPLOAD FILE {} because of {}'.format(
-                    local_path, 
-                    apie.user_message_text
+                'FAILED TO LOAD {} due to {}'.format(
+                    row['path'],
+                    str(e)
                 )
             )
+            
+            row['error_message'] = str(e)
 
             with get_session() as session:
                 insert_if_not_exists(
                     session,
-                    FailedDropboxUpload,
+                    failed_table_class,
                     **row
                 )
 
-
-def download_dropbox_file(dbx, dbx_path, get_session, media_dir):
-
-    row = {
-        'dbx_path': dbx_path,
-        'insertion_time': datetime.datetime.now()
-    }
-
-    with get_session() as session:
-        insert_if_not_exists(
-            session,
-            IncompleteDropboxDownload,
-            **row
-        )
-
-    print('DOWNLOADING FILE:', dbx_path)
-
-    (_, response) = dbx.files_download_to_file(
-        os.path.join(media_dir, dbx_path[1:]),
-        dbx_path
-    )
-    print('RESPONSE STATUS CODE:', response.status_code)
-    print('RESPONSE TEXT:', response.text)
-
-    with get_session() as session:
-        session.query(IncompleteDropboxDownload).filter(
-            IncompleteDropboxDownload.dbx_path == dbx_path
-        ).delete()
-
-        row['insertion_time'] = datetime.datetime.now()
-
-        session.query(Registry).insert(**row)
+        with get_session() as session:
+            session.query(incomplete_table_class).filter(
+                incomplete_table_class.path == row['path']
+            ).delete()
+        
+    return safe_load
 
 
 def insert_if_not_exists(session, mapped, **kwargs):

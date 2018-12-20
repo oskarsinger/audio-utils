@@ -3,3 +3,5 @@
 * Parallelize where possible. Celery would actually take care of a lot of that.
 * Figure out what happens if I try to write to a path that doesn't exist in Dropbox.
 * Consider using structlogs to do logging
+* Improve DB schema with stuff like artist and album tables with relations to the song table
+* Fix faulty logic on passing arguments through the function returned by `get_safe_load`
