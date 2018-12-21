@@ -1,10 +1,10 @@
 from distutils.core import setup
+from setuptools import find_packages
 
-packages = [
-    ''
-]
+export_packages = find_packages(where='.', include=('audioutils', 'audioutils.*'))
 
 setup(
     name='audioutils',
     version='0.01',
-    packages=['audioutils.' + p for p in packages])
+    packages=export_packages
+)
