@@ -22,7 +22,7 @@ def get_safe_load(do_load, incomplete_table_class, failed_table_class):
             )
 
         try:
-            do_load(dbx, path, get_session, media_dir)
+            do_load(dbx, row, get_session, media_dir)
         except Exception as e:
             print(
                 'FAILED TO LOAD {} due to {}'.format(

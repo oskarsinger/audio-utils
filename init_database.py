@@ -20,7 +20,10 @@ def run_things_all_day_bb(db_dir, db_info_path):
         db_info['user'],
         db_info['host']
     )
-    engine = sqlalchemy.create_engine(db_string)
+    engine = sqlalchemy.create_engine(
+        db_string,
+        echo=True
+    )
     connection = engine.connect()
 
     connection.execute('commit')

@@ -1,4 +1,10 @@
-from sqlalchemy import Column, String, DateTime, Integer
+from sqlalchemy import (
+    Column, 
+    String, 
+    DateTime, 
+    Integer,
+    ForeignKey
+)
 from sqlalchemy.ext.declarative import declarative_base
 
 
@@ -20,46 +26,72 @@ class Incomplete(Base):
     __tablename__ = 'incomplete'
 
     path = Column(String, primary_key=True)
+    interaction = Column(String)
     insertion_time = Column(DateTime)
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'incomplete',
+        'polymorphic_on': interaction
+    }
 
 
 class Failed(Base):
 
-    __tablename__ 'failed'
+    __tablename__ = 'failed'
 
     path = Column(String, primary_key=True)
     error_message = Column(String)
+    interaction = Column(String)
     insertion_time = Column(DateTime)
 
-
-class IncompleteDropboxUpload(Incomplete):
-
-    __tablename__ = 'incomplete_dropbox_upload'
-
-
-class IncompleteDropboxDownload(Incomplete):
-
-    __table__ = 'incomplete_dropbox_download'
+    __mapper_args__ = {
+        'polymorphic_identity': 'incomplete',
+        'polymorphic_on': interaction
+    }
 
 
-class IncompleteMP3Transfer(Incomplete):
+def get_incomplete(name):
 
-    __table__ = 'incomplete_mp3_transfer'
+    class IncompleteChild(Incomplete):
 
-
-class FailedDropboxDownload(Failed):
-
-    __tablename__ = 'failed_dropbox_download'
-
-
-class FailedDropboxUpload(Failed):
-
-    __tablename__ = 'failed_dropbox_upload'
+        __mapper_args__ = {
+            'polymorphic_identity': name
+        }
+        
+    return IncompleteChild
 
 
-class FailedMP3Transfer(Failed):
+def get_failed(name):
 
-    __tablename__ = 'failed_mp3_transfer'
+    class FailedChild(Failed):
+
+        __mapper_args__ = {
+            'polymorphic_identity': name
+        }
+        
+    return FailedChild
+
+
+IncompleteDropboxUpload = get_incomplete(
+    'incomplete_dropbox_upload'
+)
+IncompleteDropboxDownload = get_incomplete(
+    'incomplete_dropbox_download'
+)
+IncompleteMP3Transfer = get_incomplete(
+    'incomplete_mp3_transfer'
+)
+
+
+FailedDropboxDownload = get_failed(
+    'failed_dropbox_download'
+)
+FailedDropboxUpload = get_failed(
+    'failed_dropbox_upload'
+)
+FailedMP3Transfer = get_failed(
+    'failed_mp3_transfer'
+)
 
 
 class TooLargeDropboxUpload(Base):
@@ -73,7 +105,7 @@ class TooLargeDropboxUpload(Base):
 
 class SongRegistry(Base):
 
-    __table__ = 'song_registry'
+    __tablename__ = 'song_registry'
 
     path = Column(String, primary_key=True)
     artist = Column(String)
@@ -87,7 +119,7 @@ class SongRegistry(Base):
 
 class AlbumArtRegistry(Base):
 
-    __table__ = 'album_art_registry'
+    __tablename__ = 'album_art_registry'
 
     path = Column(String, primary_key=True)
     artist = Column(String)
@@ -98,7 +130,7 @@ class AlbumArtRegistry(Base):
 
 class AlbumRegistry(Base):
     
-    __table__ = 'album_registry'
+    __tablename__ = 'album_registry'
 
     album = Column(String, primary_key=True)
     artist = Column(String, primary_key=True)
@@ -107,7 +139,7 @@ class AlbumRegistry(Base):
 
 class ArtistRegistry(Base):
 
-    __table__ = 'artist_registry'
+    __tablename__ = 'artist_registry'
 
     artist = Column(String, primary_key=True)
     insertion_time = Column(DateTime)
@@ -115,7 +147,7 @@ class ArtistRegistry(Base):
 
 class OtherRegistry(Base):
 
-    __table__ = 'other_registry'
+    __tablename__ = 'other_registry'
 
     path = Column(String, primary_key=True)
     file_type = Column(String)
