@@ -5,12 +5,23 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 
+def create_tables(engine):
+
+    Base.metadata.create_all(bind=engine)
+
+    tables = Base.metadata.tables
+
+    return {n: engine.has_table(n)
+            for n in tables.keys()}
+
+
 class Incomplete(Base):
 
     __tablename__ = 'incomplete'
 
     path = Column(String, primary_key=True)
     insertion_time = Column(DateTime)
+
 
 class Failed(Base):
 
