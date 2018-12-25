@@ -8,13 +8,8 @@ from dropbox.files import (
     FolderMetadata
 )
 from audioutils.db.tables import (
-<<<<<<< HEAD
     IncompleteDropboxUpload,
     FailedDropboxUpload,
-=======
-    IncompleteDropboxDownload,
-    FailedDropboxUpload
->>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
     IncompleteDropboxDownload,
     FailedDropboxDownload,
     TooLargeDropboxUpload,
@@ -34,16 +29,6 @@ from audioutils.metadata import (
 MAX_MEGABYTES = 150
 
 
-<<<<<<< HEAD
-=======
-dropbox_upload_file = get_safe_load(
-    unsafe_dropbox_upload_file,
-    IncompleteDropboxUpload,
-    FailedDropboxUpload
-)
-
-
->>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
 def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
 
     lmd = len(media_dir) 
@@ -66,34 +51,22 @@ def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
 
         raise Exception(error_message)
     else:
-<<<<<<< HEAD
         with open(row['path'], 'rb') as f:
-=======
-        with open(row['path'], as 'rb') as f:
->>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
             dbx.files_upload(
                 f,
                 row['path'][lmd:]
             )
 
 
-<<<<<<< HEAD
 dropbox_upload_file = get_safe_load(
     unsafe_dropbox_upload_file,
     IncompleteDropboxUpload,
     FailedDropboxUpload
-=======
-dropbox_download_file = get_safe_load(
-    unsafe_dropbox_download_file,
-    IncompleteDropboxDownload,
-    FailedDropboxDownload
->>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
 )
 
 
 def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
 
-<<<<<<< HEAD
     print('DOWNLOADING FILE:', row['path'])
 
     dbx_metadata = dbx.files_download_to_file(
@@ -101,18 +74,6 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
         row['path']
     )
     # TODO: implement hash stuff here
-=======
-    print('DOWNLOADING FILE:', dbx_path)
-
-    (_, response) = dbx.files_download_to_file(
-        os.path.join(media_dir, row['path'][1:]),
-        row['path']
-    )
-    # TODO: probably raise exception if this goes wrong; need to learn about these status codes
-    print('RESPONSE STATUS CODE:', response.status_code)
-    print('RESPONSE TEXT:', response.text)
-
->>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
     (head, ext) = os.path.splitext(row['path'])
     row['file_type'] = ext[1:]
     registry = None
@@ -140,7 +101,6 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
         session.query(registry).insert(**row)
 
 
-<<<<<<< HEAD
 dropbox_download_file = get_safe_load(
     unsafe_dropbox_download_file,
     IncompleteDropboxDownload,
@@ -148,8 +108,6 @@ dropbox_download_file = get_safe_load(
 )
 
 
-=======
->>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
 def get_remote_only_files(dbx, media_dir, dbx_dir):
 
     search_path = join(
