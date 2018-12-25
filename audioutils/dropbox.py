@@ -8,8 +8,8 @@ from dropbox.files import (
     FolderMetadata
 )
 from audioutils.db.tables import (
-    IncompleteDropboxDownload,
-    FailedDropboxUpload
+    IncompleteDropboxUpload,
+    FailedDropboxUpload,
     IncompleteDropboxDownload,
     FailedDropboxDownload,
     TooLargeDropboxUpload,
@@ -27,13 +27,6 @@ from audioutils.metadata import (
 
 
 MAX_MEGABYTES = 150
-
-
-dropbox_upload_file = get_safe_load(
-    unsafe_dropbox_upload_file,
-    IncompleteDropboxUpload,
-    FailedDropboxUpload
-)
 
 
 def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
@@ -58,32 +51,29 @@ def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
 
         raise Exception(error_message)
     else:
-        with open(row['path'], as 'rb') as f:
+        with open(row['path'], 'rb') as f:
             dbx.files_upload(
                 f,
                 row['path'][lmd:]
             )
 
 
-dropbox_download_file = get_safe_load(
-    unsafe_dropbox_download_file,
-    IncompleteDropboxDownload,
-    FailedDropboxDownload
+dropbox_upload_file = get_safe_load(
+    unsafe_dropbox_upload_file,
+    IncompleteDropboxUpload,
+    FailedDropboxUpload
 )
 
 
 def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
 
-    print('DOWNLOADING FILE:', dbx_path)
+    print('DOWNLOADING FILE:', row['path'])
 
-    (_, response) = dbx.files_download_to_file(
+    dbx_metadata = dbx.files_download_to_file(
         os.path.join(media_dir, row['path'][1:]),
         row['path']
     )
-    # TODO: probably raise exception if this goes wrong; need to learn about these status codes
-    print('RESPONSE STATUS CODE:', response.status_code)
-    print('RESPONSE TEXT:', response.text)
-
+    # TODO: implement hash stuff here
     (head, ext) = os.path.splitext(row['path'])
     row['file_type'] = ext[1:]
     registry = None
@@ -109,6 +99,13 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
 
     with get_session() as session:
         session.query(registry).insert(**row)
+
+
+dropbox_download_file = get_safe_load(
+    unsafe_dropbox_download_file,
+    IncompleteDropboxDownload,
+    FailedDropboxDownload
+)
 
 
 def get_remote_only_files(dbx, media_dir, dbx_dir):

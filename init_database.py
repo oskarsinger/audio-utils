@@ -1,5 +1,7 @@
+import os
 import click
 import sqlalchemy
+import pathlib
 import yaml
 
 from sqlalchemy.exc import ProgrammingError
@@ -7,9 +9,13 @@ from sqlalchemy.exc import ProgrammingError
 from audioutils.db.tables import create_tables
 
 @click.command()
-@click.option('--db-info-path')
-def run_things_all_day_bb(db_info_path):
+def run_things_all_day_bb():
 
+    home = pathlib.Path.home()
+    db_info_path = os.path.join(
+        home,
+        '.postgres_info'
+    )
     db_info = None
 
     with open(db_info_path, 'r') as f:
@@ -33,7 +39,7 @@ def run_things_all_day_bb(db_info_path):
         connection.execute('commit')
         connection.execute(
             'create database {}'.format(
-                db_info['db_name']
+                'music'
             )
         )
         connection.close()

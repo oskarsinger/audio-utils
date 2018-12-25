@@ -21,35 +21,6 @@ def create_tables(engine):
             for n in tables.keys()}
 
 
-class Incomplete(Base):
-
-    __tablename__ = 'incomplete'
-
-    path = Column(String, primary_key=True)
-    interaction = Column(String)
-    insertion_time = Column(DateTime)
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'incomplete',
-        'polymorphic_on': interaction
-    }
-
-
-class Failed(Base):
-
-    __tablename__ = 'failed'
-
-    path = Column(String, primary_key=True)
-    error_message = Column(String)
-    interaction = Column(String)
-    insertion_time = Column(DateTime)
-
-    __mapper_args__ = {
-        'polymorphic_identity': 'incomplete',
-        'polymorphic_on': interaction
-    }
-
-
 def get_snake2camel(snake):
 
     tokens = snake.split('_')
@@ -62,29 +33,26 @@ def get_snake2camel(snake):
 def get_incomplete(name):
 
     attrs = {
-        'path': Column(String, ForeignKey('incomplete.path'), primary_key=True),
-        '__tablename__': name,
-        '__mapper_args__' : {
-            'polymorphic_identity': name
-        }
+        'path': Column(String, primary_key=True),
+        'insertion_time': Column(DateTime),
+        '__tablename__': name
     }
     class_name = get_snake2camel(name)
         
-    return type(class_name, (Incomplete,), attrs)
+    return type(class_name, (Base,), attrs)
 
 
 def get_failed(name):
 
     attrs = {
-        'path': Column(String, ForeignKey('failed.path'), primary_key=True),
-        '__tablename__': name,
-        '__mapper_args__' : {
-            'polymorphic_identity': name
-        }
+        'path': Column(String, primary_key=True),
+        'error_message': Column(String),
+        'insertion_time': Column(DateTime),
+        '__tablename__': name
     }
     class_name = get_snake2camel(name)
         
-    return type(class_name, (Failed,), attrs)
+    return type(class_name, (Base,), attrs)
 
 
 IncompleteDropboxUpload = get_incomplete(

@@ -2,6 +2,7 @@ import click
 import dropbox
 import os
 import pathlib
+import yaml
 
 from os.path import basename, dirname, join, exists
 from collections import defaultdict
@@ -14,7 +15,7 @@ from audioutils.dropbox import (
     get_full_listdir,
     get_remote_only_files
 )
-from audioutils.db.utils import (
+from audioutils.dropbox import (
     dropbox_download_file,
     dropbox_upload_file
 )
@@ -52,13 +53,21 @@ def dropbox_cli(ctx, media_dir):
         oauth_key = f.readline().strip()
 
     dbx = dropbox.Dropbox(oauth_key)
+    db_info_path = os.path.join(
+        home,
+        '.postgres_info'
+    )
+    db_info = None
+
+    with open(db_info_path, 'r') as f:
+        db_info = yaml.load(f)
 
     ctx.obj['dbx'] = dbx
     ctx.obj['get_session'] = get_session_maker(
-        POSTGRES_USER,
-        POSTGRES_PASSWORD,
-        POSTGRES_HOST,
-        POSTGRES_DB
+        db_info['user'],
+        db_info['password'],
+        db_info['host'],
+        'music'
     )
 
 
@@ -156,11 +165,7 @@ def download(ctx):
             ctx.obj['get_session'],
             ctx.obj['media_dir']
         )
-        .files_download_to_file(
-            save_path, 
-            dbx_path
-        )
-
     
+
 if __name__=='__main__':
     dropbox_cli(obj={})
