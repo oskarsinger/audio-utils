@@ -1,7 +1,11 @@
 import datetime
 
 from sqlalchemy.dialects.postgresql import insert
+<<<<<<< HEAD
 from dropbox.exceptions import DropboxException
+=======
+from dropbox.exceptions import ApiError
+>>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
 
 
 def get_safe_load(do_load, incomplete_table_class, failed_table_class):
@@ -10,8 +14,14 @@ def get_safe_load(do_load, incomplete_table_class, failed_table_class):
 
         row = {
             'path': path,
+<<<<<<< HEAD
             'insertion_time': datetime.datetime.now()
         }
+=======
+            'insertion_time'
+        }
+        row['insertion_time'] = datetime.datetime.now()
+>>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
 
         with get_session() as session:
             insert_if_not_exists(
@@ -22,7 +32,11 @@ def get_safe_load(do_load, incomplete_table_class, failed_table_class):
 
         try:
             do_load(dbx, row, get_session, media_dir)
+<<<<<<< HEAD
         except DropboxException as e:
+=======
+        except Exception as e:
+>>>>>>> 295ee43f968e00deb35c03fa31d2d6a0767110dc
             print(
                 'FAILED TO LOAD {} due to {}'.format(
                     path,
