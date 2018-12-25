@@ -50,26 +50,41 @@ class Failed(Base):
     }
 
 
+def get_snake2camel(snake):
+
+    tokens = snake.split('_')
+    capitalized = [t[0].upper() + t[1:]
+                   for t in tokens]
+
+    return ''.join(capitalized)
+
+
 def get_incomplete(name):
 
-    class IncompleteChild(Incomplete):
-
-        __mapper_args__ = {
+    attrs = {
+        'path': Column(String, ForeignKey('incomplete.path'), primary_key=True),
+        '__tablename__': name,
+        '__mapper_args__' : {
             'polymorphic_identity': name
         }
+    }
+    class_name = get_snake2camel(name)
         
-    return IncompleteChild
+    return type(class_name, (Incomplete,), attrs)
 
 
 def get_failed(name):
 
-    class FailedChild(Failed):
-
-        __mapper_args__ = {
+    attrs = {
+        'path': Column(String, ForeignKey('failed.path'), primary_key=True),
+        '__tablename__': name,
+        '__mapper_args__' : {
             'polymorphic_identity': name
         }
+    }
+    class_name = get_snake2camel(name)
         
-    return FailedChild
+    return type(class_name, (Failed,), attrs)
 
 
 IncompleteDropboxUpload = get_incomplete(

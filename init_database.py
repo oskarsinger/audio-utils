@@ -2,12 +2,13 @@ import click
 import sqlalchemy
 import yaml
 
+from sqlalchemy.exc import ProgrammingError
+
 from audioutils.db.tables import create_tables
 
 @click.command()
-@click.option('--db-dir')
 @click.option('--db-info-path')
-def run_things_all_day_bb(db_dir, db_info_path):
+def run_things_all_day_bb(db_info_path):
 
     db_info = None
 
@@ -15,24 +16,29 @@ def run_things_all_day_bb(db_dir, db_info_path):
         db_info = yaml.load(f)
 
     db_string = '''
-        postgresq://{}@{}:5432
+        postgresql://{}:{}@{}:5432
     '''.format(
         db_info['user'],
+        db_info['password'],
         db_info['host']
-    )
+    ).strip()
     engine = sqlalchemy.create_engine(
         db_string,
         echo=True
     )
-    connection = engine.connect()
 
-    connection.execute('commit')
-    connection.execute(
-        'create database {}'.format(
-            db_info['db_name']
+    try:
+        connection = engine.connect()
+
+        connection.execute('commit')
+        connection.execute(
+            'create database {}'.format(
+                db_info['db_name']
+            )
         )
-    )
-    connection.close()
+        connection.close()
+    except ProgrammingError as e:
+        print(e)
 
     table_exists = create_tables(engine)
 
