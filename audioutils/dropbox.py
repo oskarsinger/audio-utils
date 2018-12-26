@@ -7,6 +7,9 @@ from dropbox.files import (
     FileMetadata, 
     FolderMetadata
 )
+from dropbox.exceptions import DropboxException
+from structlog import get_logger
+
 from audioutils.db.tables import (
     IncompleteDropboxUpload,
     FailedDropboxUpload,
@@ -26,6 +29,7 @@ from audioutils.metadata import (
 )
 
 
+LOGGER = get_logger()
 MAX_MEGABYTES = 150
 
 
@@ -35,11 +39,12 @@ def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
     file_size = os.stat(row['path']).st_size
     megabytes = size / 10**6
 
+    LOGGER.msg(
+        'Uploading file',
+        path=row['path']
+    )
+
     if megabytes > MAX_MEGABYTES:
-        error_message = 'FILE {} EXCEEDS MAX REQUEST SIZE WITH {}MB.'.format(
-            row['path'], 
-            megabytes
-        )
         row['size'] = file_size
 
         with get_session() as session:
@@ -49,31 +54,54 @@ def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
                 **row
             )
 
-        raise Exception(error_message)
+        LOGGER.msg(
+            'File size exceeds Dropbox limit', 
+            megabytes=megabytes,
+            path=row['path']
+        )
     else:
         with open(row['path'], 'rb') as f:
-            dbx.files_upload(
+            metadata = dbx.files_upload(
                 f,
                 row['path'][lmd:]
             )
+
+        LOGGER.msg(
+            'File successfully uploaded to Dropbox',
+            path=row['path']
+        )
 
 
 dropbox_upload_file = get_safe_load(
     unsafe_dropbox_upload_file,
     IncompleteDropboxUpload,
-    FailedDropboxUpload
+    FailedDropboxUpload,
+    DropboxException
 )
 
 
 def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
 
-    print('DOWNLOADING FILE:', row['path'])
+    LOGGER.msg(
+        'Downloading file', 
+        path=row['path']
+    )
 
+    local_path = os.path.join(media_dir, row['path'][1:])
     dbx_metadata = dbx.files_download_to_file(
-        os.path.join(media_dir, row['path'][1:]),
+        local_path,
         row['path']
     )
-    # TODO: implement hash stuff here
+
+
+    if not get_hash_check(local_path, dbx_metadata):
+        raise DropboxException('Local and Dropbob content hashes not equal.')
+
+    LOGGER.msg(
+        'File successfully downloaded from Dropbox',
+        path=row['path']
+    )
+
     (head, ext) = os.path.splitext(row['path'])
     row['file_type'] = ext[1:]
     registry = None
@@ -104,8 +132,17 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
 dropbox_download_file = get_safe_load(
     unsafe_dropbox_download_file,
     IncompleteDropboxDownload,
-    FailedDropboxDownload
+    FailedDropboxDownload,
+    DropboxException
 )
+
+
+def get_hash_check(local_path, dbx_metadata):
+
+    dbx_hash = dbx_metadata.content_hash
+    local_hash = None
+
+    return dbx_hash == local_hash
 
 
 def get_remote_only_files(dbx, media_dir, dbx_dir):

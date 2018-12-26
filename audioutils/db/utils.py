@@ -1,7 +1,10 @@
 import datetime
 
 from sqlalchemy.dialects.postgresql import insert
-from dropbox.exceptions import DropboxException
+from structlog import get_logger
+
+
+LOGGER = get_logger()
 
 
 def get_safe_load(do_load, incomplete_table_class, failed_table_class, exception_class):
@@ -23,15 +26,13 @@ def get_safe_load(do_load, incomplete_table_class, failed_table_class, exception
         try:
             do_load(dbx, row, get_session, media_dir)
         except exception_class as e:
-            print(
-                'FAILED TO LOAD {} due to {}'.format(
-                    path,
-                    str(e)
-                )
-            )
-            
             row['error_message'] = str(e)
 
+            LOGGER.msg(
+                'Failed to load',
+                **row
+            )
+            
             with get_session() as session:
                 insert_if_not_exists(
                     session,

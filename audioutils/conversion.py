@@ -4,6 +4,7 @@ import shutil
 
 from pydub import AudioSegment
 from pathos.multiprocessing import ProcessPool as PP
+from structlog import get_logger
 
 from os import listdir
 from os.path import join, isfile
@@ -14,6 +15,9 @@ from audioutils.metadata import (
     get_metadata,
     MUSIC_FILETYPES
 )
+
+
+LOGGER = get_logger()
 
 # TODO: hold back on things that haven't been cut with .cue files
 # TODO: simple length-in-seconds of music file might be a good filter
@@ -81,14 +85,25 @@ def convert_and_write_song(
     target_fn = name + '.' + target_format
     target_song_path = join(album_dir, target_fn)
 
-    print('Importing file:', source_song_path)
+    LOGGER.msg(
+        'Importing file', 
+        source_path=source_song_path,
+        target_path=target_song_path,
+        source_format=source_format,
+        target_format=target_format
+    )
 
     song = AudioSegment.from_file(
         source_song_path, 
         format=source_format)
     metadata = get_metadata(source_song_path)
 
-    print('Exporting file:', target_song_path)
+    LOGGER.msg(
+        'Exporting file', 
+        source_path=source_song_path,
+        target_path=target_song_path,
+        source_format=source_format,
+        target_format=target_format)
     
     song.export(
         target_song_path,
@@ -99,4 +114,8 @@ def convert_and_write_song(
         metadata, 
         source_format)
 
-    print()
+    LOGGER.msg(
+        'Setting metadata',
+        target_path=target_song_path,
+        **metadata
+    )

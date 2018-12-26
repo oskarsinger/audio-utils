@@ -7,6 +7,7 @@ import yaml
 from os.path import basename, dirname, join, exists
 from collections import defaultdict
 from shutil import move
+from tqdm import tqdm
 
 from audioutils.io import unzip_and_save_bandcamp_album
 from audioutils.metadata import get_metadata
@@ -131,7 +132,7 @@ def upload(ctx):
     with ctx.obj['get_session']() as session:
         rows = session.query(ToDropboxUpload).all()
 
-    for r in rows:
+    for r in tqdm(rows):
         dropbox_upload_file(
             ctx.job['dbx'],
             r.local_path,
@@ -150,14 +151,16 @@ def download(ctx):
         DBX_MUSIC_DIR
     )
 
-    for dbx_path in remote_only_files:
+    for dbx_path in tqdm(remote_only_files):
         save_path = join(
             ctx.obj['media_dir'], 
             dbx_path[1:]
         )
-        print('Downloading\n\t{}\n\tto\n\t{}'.format(dbx_path, save_path))
 
-        os.makedirs(dirname(save_path), exist_ok=True)
+        os.makedirs(
+            dirname(save_path), 
+            exist_ok=True
+        )
 
         dropbox_download_file(
             ctx.obj['dbx'],
