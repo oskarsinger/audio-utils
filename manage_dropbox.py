@@ -11,12 +11,12 @@ from tqdm import tqdm
 
 from audioutils.io import unzip_and_save_bandcamp_album
 from audioutils.metadata import get_metadata
-from audioutils.dropbox import (
+from audioutils.dropbox.utils import (
     get_all_files,
     get_full_listdir,
     get_remote_only_files
 )
-from audioutils.dropbox import (
+from audioutils.dropbox.loading import (
     dropbox_download_file,
     dropbox_upload_file
 )
@@ -24,10 +24,6 @@ from audioutils.db.session import get_session_maker
 
 
 DBX_MUSIC_DIR = '/Music'
-POSTGRES_USER = None
-POSTGRES_PASSWORD = None
-POSTGRES_HOST = None
-POSTGRES_DB = None
 
 
 @click.group()

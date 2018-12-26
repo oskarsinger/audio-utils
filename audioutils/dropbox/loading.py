@@ -1,14 +1,7 @@
 import os
-import glob
 
-from os.path import join, isdir
-
-from dropbox.files import (
-    FileMetadata, 
-    FolderMetadata
-)
-from dropbox.exceptions import DropboxException
 from structlog import get_logger
+from dropbox.exceptions import DropboxException
 
 from audioutils.db.tables import (
     IncompleteDropboxUpload,
@@ -27,6 +20,7 @@ from audioutils.metadata import (
     get_metadata,
     MUSIC_FILETYPES
 )
+from audioutils.dropbox.hashing import get_dropbox_hash_check
 
 
 LOGGER = get_logger()
@@ -60,11 +54,16 @@ def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
             path=row['path']
         )
     else:
+        dbx_metadata = None
+
         with open(row['path'], 'rb') as f:
-            metadata = dbx.files_upload(
+            dbx_metadata = dbx.files_upload(
                 f,
                 row['path'][lmd:]
             )
+
+        if not get_dropbox_hash_check(row['path'], dbx_metadata):
+            raise DropboxException('Local and Dropbob content hashes not equal.')
 
         LOGGER.msg(
             'File successfully uploaded to Dropbox',
@@ -93,8 +92,7 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
         row['path']
     )
 
-
-    if not get_hash_check(local_path, dbx_metadata):
+    if not get_dropbox_hash_check(local_path, dbx_metadata):
         raise DropboxException('Local and Dropbob content hashes not equal.')
 
     LOGGER.msg(
@@ -135,56 +133,3 @@ dropbox_download_file = get_safe_load(
     FailedDropboxDownload,
     DropboxException
 )
-
-
-def get_hash_check(local_path, dbx_metadata):
-
-    dbx_hash = dbx_metadata.content_hash
-    local_hash = None
-
-    return dbx_hash == local_hash
-
-
-def get_remote_only_files(dbx, media_dir, dbx_dir):
-
-    search_path = join(
-        media_dir,
-        '**',
-        '*'
-    )
-    local_paths = glob.glob(
-        search_path,
-        recursive=True
-    )
-    local_paths_lower = [p.lower()[len(media_dir):] 
-                         for p in local_paths]
-    dbx_files = get_all_files(dbx, dbx_dir)
-    dbx_paths = [f.path_lower for f in dbx_files]
-
-    return set(dbx_paths).difference(local_paths_lower)
-
-
-def get_all_files(dbx, root):
-
-    path2files = {}
-    listdir = get_full_listdir(
-        dbx, 
-        root, 
-        recursive=True
-    )
-
-    return [metadata for metadata in listdir
-            if type(metadata) == FileMetadata]
-
-
-def get_full_listdir(dbx, root, recursive=False):
-
-    listdir = dbx.files_list_folder(root, recursive=recursive)
-    entries = listdir.entries
-
-    while listdir.has_more:
-        listdir = dbx.files_list_folder_continue(listdir.cursor)
-
-        entries.extend(listdir.entries)
-
-    return entries
