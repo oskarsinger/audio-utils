@@ -115,7 +115,7 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
         row['artist'] = metadata['artist']
         row['album'] = metadata['album']
         row['album_artist'] = metadata['albumartist']
-        row['song'] = metadata['song']
+        row['title'] = metadata['title']
         row['track_number'] = metadata['tracknumber']
     elif ext[1:] in {'jpeg', 'png'} and head.endswith('cover'):
         registry = AlbumArtRegistry
