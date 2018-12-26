@@ -85,7 +85,7 @@ def convert_and_write_song(
     target_fn = name + '.' + target_format
     target_song_path = join(album_dir, target_fn)
 
-    LOGGER.msg(
+    LOGGER.info(
         'Importing file', 
         source_path=source_song_path,
         target_path=target_song_path,
@@ -98,7 +98,7 @@ def convert_and_write_song(
         format=source_format)
     metadata = get_metadata(source_song_path)
 
-    LOGGER.msg(
+    LOGGER.info(
         'Exporting file', 
         source_path=source_song_path,
         target_path=target_song_path,
@@ -114,7 +114,7 @@ def convert_and_write_song(
         metadata, 
         source_format)
 
-    LOGGER.msg(
+    LOGGER.info(
         'Setting metadata',
         target_path=target_song_path,
         **metadata

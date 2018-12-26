@@ -28,7 +28,7 @@ def get_safe_load(do_load, incomplete_table_class, failed_table_class, exception
         except exception_class as e:
             row['error_message'] = str(e)
 
-            LOGGER.msg(
+            LOGGER.error(
                 'Failed to load',
                 **row
             )

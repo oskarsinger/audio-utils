@@ -3,6 +3,8 @@ import dropbox
 import os
 import pathlib
 import yaml
+import logging
+import structlog
 
 from os.path import basename, dirname, join, exists
 from collections import defaultdict
@@ -22,6 +24,11 @@ from audioutils.dropbox.loading import (
 )
 from audioutils.db.session import get_session_maker
 
+logging.basicConfig()
+
+from structlog.stdlib import LoggerFactory
+
+structlog.configure(logger_factory=LoggerFactory())
 
 DBX_MUSIC_DIR = '/Music'
 

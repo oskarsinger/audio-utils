@@ -10,7 +10,8 @@ from audioutils.db.tables import (
     FailedDropboxDownload,
     TooLargeDropboxUpload,
     SongRegistry,
-    AlbumArtRegistry
+    AlbumArtRegistry,
+    OtherRegistry
 )
 from audioutils.db.utils import (
     get_safe_load,
@@ -33,8 +34,8 @@ def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
     file_size = os.stat(row['path']).st_size
     megabytes = size / 10**6
 
-    LOGGER.msg(
-        'Uploading file',
+    LOGGER.info(
+        'Uploading file to Dropbox',
         path=row['path']
     )
 
@@ -48,7 +49,7 @@ def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
                 **row
             )
 
-        LOGGER.msg(
+        LOGGER.error(
             'File size exceeds Dropbox limit', 
             megabytes=megabytes,
             path=row['path']
@@ -65,7 +66,7 @@ def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
         if not get_dropbox_hash_check(row['path'], dbx_metadata):
             raise DropboxException('Local and Dropbob content hashes not equal.')
 
-        LOGGER.msg(
+        LOGGER.info(
             'File successfully uploaded to Dropbox',
             path=row['path']
         )
@@ -81,8 +82,8 @@ dropbox_upload_file = get_safe_load(
 
 def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
 
-    LOGGER.msg(
-        'Downloading file', 
+    LOGGER.info(
+        'Downloading file from Dropbox', 
         path=row['path']
     )
 
@@ -95,9 +96,10 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
     if not get_dropbox_hash_check(local_path, dbx_metadata):
         raise DropboxException('Local and Dropbob content hashes not equal.')
 
-    LOGGER.msg(
+    LOGGER.info(
         'File successfully downloaded from Dropbox',
-        path=row['path']
+        path=row['path'],
+        local_path=local_path
     )
 
     (head, ext) = os.path.splitext(row['path'])
@@ -105,14 +107,16 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
     registry = None
 
     if ext[1:] in MUSIC_FILETYPES:
-        metadata = get_metadata(row['path'])
+        metadata = get_metadata(local_path)
         registry = SongRegistry
+
+        print('METADATA ITEMS:', list(metadata.items()))
 
         row['artist'] = metadata['artist']
         row['album'] = metadata['album']
-        row['album_artist'] = metadata['album_artist']
+        row['album_artist'] = metadata['albumartist']
         row['song'] = metadata['song']
-        row['track_number'] = metadata['track_number']
+        row['track_number'] = metadata['tracknumber']
     elif ext[1:] in {'jpeg', 'png'} and head.endswith('cover'):
         registry = AlbumArtRegistry
 
@@ -123,8 +127,10 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
     else:
         registry = OtherRegistry
 
+    registry_obj = registry(**row)
+
     with get_session() as session:
-        session.query(registry).insert(**row)
+        session.add(registry_obj)
 
 
 dropbox_download_file = get_safe_load(
