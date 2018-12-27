@@ -5,6 +5,7 @@ import pathlib
 import yaml
 import logging
 import structlog
+import datetime
 
 from os.path import basename, dirname, join, exists
 from collections import defaultdict
@@ -23,12 +24,29 @@ from audioutils.dropbox.loading import (
     dropbox_upload_file
 )
 from audioutils.db.session import get_session_maker
+from audioutils.db.tables import (
+    IncompleteDropboxDownload,
+    IncompleteDropboxUpload
+)
 
-logging.basicConfig()
+logfile_name = 'log_{}.txt'.format(
+    datetime.datetime.now()
+)
+logging.basicConfig(
+    filename=logfile_name,
+    level=logging.DEBUG    
+)
 
 from structlog.stdlib import LoggerFactory
+from structlog.processors import (
+    JSONRenderer,
+    TimeStamper
+)
 
-structlog.configure(logger_factory=LoggerFactory())
+structlog.configure(
+    logger_factory=LoggerFactory(),
+    processors=[TimeStamper(), JSONRenderer()]
+)
 
 DBX_MUSIC_DIR = '/Music'
 
@@ -130,15 +148,16 @@ def update(ctx, source, bandcamp):
 @click.pass_context
 def upload(ctx):
 
-    rows = None
+    local_paths = None
 
     with ctx.obj['get_session']() as session:
-        rows = session.query(ToDropboxUpload).all()
+         rows = session.query(IncompleteDropboxUpload).all()
+         local_paths = [r.path for r in rows]
 
-    for r in tqdm(rows):
+    for lp in tqdm(local_paths):
         dropbox_upload_file(
             ctx.job['dbx'],
-            r.local_path,
+            lp,
             ctx.obj['get_session'],
             ctx.obj['media_dir']
         )
@@ -153,6 +172,13 @@ def download(ctx):
         ctx.obj['media_dir'],
         DBX_MUSIC_DIR
     )
+
+    with ctx.obj['get_session']() as session:
+        rows = session.query(IncompleteDropboxDownload).all()
+        incomplete_dbx_paths = [r.path for r in rows]
+
+        remote_only_files.extend(incomplete_dbx_paths)
+
 
     for dbx_path in tqdm(remote_only_files):
         save_path = join(

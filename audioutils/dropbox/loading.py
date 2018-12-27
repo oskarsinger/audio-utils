@@ -94,7 +94,7 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
     )
 
     if not get_dropbox_hash_check(local_path, dbx_metadata):
-        raise DropboxException('Local and Dropbob content hashes not equal.')
+        raise DropboxException('Local and Dropbox content hashes not equal.')
 
     LOGGER.info(
         'File successfully downloaded from Dropbox',
@@ -102,6 +102,7 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
         local_path=local_path
     )
 
+    '''
     (head, ext) = os.path.splitext(row['path'])
     row['file_type'] = ext[1:]
     registry = None
@@ -131,6 +132,7 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
 
     with get_session() as session:
         session.add(registry_obj)
+    '''
 
 
 dropbox_download_file = get_safe_load(

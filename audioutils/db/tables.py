@@ -94,7 +94,7 @@ class SongRegistry(Base):
     artist = Column(String)
     album = Column(String)
     album_artist = Column(String)
-    song = Column(String)
+    title = Column(String)
     track_number = Column(Integer)
     file_type = Column(String)
     insertion_time = Column(DateTime)

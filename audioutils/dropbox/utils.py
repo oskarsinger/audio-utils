@@ -24,7 +24,7 @@ def get_remote_only_files(dbx, media_dir, dbx_dir):
     dbx_files = get_all_files(dbx, dbx_dir)
     dbx_paths = [f.path_lower for f in dbx_files]
 
-    return set(dbx_paths).difference(local_paths_lower)
+    return list(set(dbx_paths).difference(local_paths_lower))
 
 
 def get_all_files(dbx, root):
