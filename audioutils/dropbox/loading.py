@@ -2,6 +2,7 @@ import os
 
 from structlog import get_logger
 from dropbox.exceptions import DropboxException
+from requests.exceptions import ReadTimeoutError
 
 from audioutils.db.tables import (
     IncompleteDropboxUpload,
@@ -26,6 +27,10 @@ from audioutils.dropbox.hashing import get_dropbox_hash_check
 
 LOGGER = get_logger()
 MAX_MEGABYTES = 150
+EXCEPTION_CLASSES = (
+    DropboxException,
+    ReadTimeoutError
+)
 
 
 def unsafe_dropbox_upload_file(dbx, row, get_session, media_dir):
@@ -76,7 +81,7 @@ dropbox_upload_file = get_safe_load(
     unsafe_dropbox_upload_file,
     IncompleteDropboxUpload,
     FailedDropboxUpload,
-    DropboxException
+    EXCEPTION_CLASSES 
 )
 
 
@@ -139,5 +144,5 @@ dropbox_download_file = get_safe_load(
     unsafe_dropbox_download_file,
     IncompleteDropboxDownload,
     FailedDropboxDownload,
-    DropboxException
+    EXCEPTION_CLASSES
 )
