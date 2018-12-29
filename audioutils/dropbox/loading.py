@@ -2,7 +2,10 @@ import os
 
 from structlog import get_logger
 from dropbox.exceptions import DropboxException
-from requests.exceptions import ReadTimeoutError
+from requests.exceptions import (
+    ReadTimeout,
+    ConnectionError
+)
 
 from audioutils.db.tables import (
     IncompleteDropboxUpload,
@@ -29,7 +32,8 @@ LOGGER = get_logger()
 MAX_MEGABYTES = 150
 EXCEPTION_CLASSES = (
     DropboxException,
-    ReadTimeoutError
+    ReadTimeout,
+    ConnectionError
 )
 
 

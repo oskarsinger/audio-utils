@@ -54,7 +54,7 @@ DBX_MUSIC_DIR = '/Music'
 @click.group()
 @click.option('--media-dir')
 @click.pass_context
-def dropbox_cli(ctx, media_dir):
+def syncing_cli(ctx, media_dir):
 
     if media_dir[-1] == '/':
         media_dir = media_dir[:-1]
@@ -94,7 +94,7 @@ def dropbox_cli(ctx, media_dir):
 
 
 # TODO: maybe add a warning for artists that might already exist
-@dropbox_cli.command()
+@syncing_cli.command()
 @click.option('--source')
 @click.option('--bandcamp', default=False, type=bool)
 @click.pass_context
@@ -144,7 +144,7 @@ def update(ctx, source, bandcamp):
         f.write(target + '\n')
 
 
-@dropbox_cli.command()
+@syncing_cli.command()
 @click.pass_context
 def upload(ctx):
 
@@ -163,7 +163,7 @@ def upload(ctx):
         )
 
 
-@dropbox_cli.command()
+@syncing_cli.command()
 @click.pass_context
 def download(ctx):
 
@@ -197,7 +197,7 @@ def download(ctx):
             ctx.obj['get_session'],
             ctx.obj['media_dir']
         )
-    
+
 
 if __name__=='__main__':
-    dropbox_cli(obj={})
+    syncing_cli(obj={})
