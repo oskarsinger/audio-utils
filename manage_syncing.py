@@ -12,8 +12,8 @@ from os.path import basename, dirname, join, exists
 from collections import defaultdict
 from shutil import move
 from tqdm import tqdm
-from pathos.multiprocessing import ProcessPool
 
+from audioutils.parallel import do_parallel_with_pbar
 from audioutils.io import unzip_and_save_bandcamp_album
 from audioutils.metadata import get_metadata
 from audioutils.dropbox.utils import (
@@ -161,13 +161,33 @@ def upload(ctx):
          rows = session.query(IncompleteDropboxUpload).all()
          local_paths = [r.path for r in rows]
 
-    for lp in tqdm(local_paths):
-        dropbox_upload_file(
-            ctx.job['dbx'],
-            lp,
-            ctx.obj['get_session'],
-            ctx.obj['media_dir']
+    oauth_key = ctx.obj['oauth_key']
+    db_info = copy.deepcopy(
+        ctx.obj['db_info']
+    )
+    media_dir = ctx.obj['media_dir']
+
+    def dropbox_upload_closure(local_path):
+
+        dbx = dropbox.Dropbox(oauth_key)
+        get_session = get_session_maker(
+            db_info['user'],
+            db_info['password'],
+            db_info['host'],
+            db_info['db']
         )
+
+        dropbox_download_file(
+            dbx,
+            dbx_path,
+            get_session,
+            media_dir
+        )
+
+    do_parallel_with_pbar(
+        dropbox_upload_closure,
+        local_paths
+    )
 
 
 @syncing_cli.command()
@@ -186,7 +206,6 @@ def download(ctx):
 
         remote_only_files.extend(incomplete_dbx_paths)
 
-    pool = ProcessPool(nodes=6)
     oauth_key = ctx.obj['oauth_key']
     db_info = copy.deepcopy(
         ctx.obj['db_info']
@@ -210,27 +229,10 @@ def download(ctx):
             media_dir
         )
 
-    print('STARTING TASKS')
-    results = [pool.amap(dropbox_download_closure, [rof_path])
-               for rof_path in tqdm(remote_only_files)]
-
-    print('COMPLETING TASKS')
-    total = len(results)
-
-    with tqdm(total=total) as pbar:
-
-        num_ready = 0
-
-        while num_ready < total:
-            
-            ready = [r for r in results
-                     if r.ready()]
-            new_num_ready = len(ready)
-
-            if new_num_ready > num_ready:
-                pbar.update(new_num_ready - num_ready)
-
-            num_ready = new_num_ready
+    do_parallel_with_pbar(
+        dropbox_download_closure,
+        remote_only_files
+    )
 
 if __name__=='__main__':
     syncing_cli(obj={})
