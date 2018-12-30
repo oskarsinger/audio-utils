@@ -3,7 +3,6 @@
 import shutil
 
 from pydub import AudioSegment
-from pathos.multiprocessing import ProcessPool as PP
 from structlog import get_logger
 
 from os import listdir
@@ -15,6 +14,7 @@ from audioutils.metadata import (
     get_metadata,
     MUSIC_FILETYPES
 )
+from audioutils.parallel import do_parallel_with_pbar
 
 
 LOGGER = get_logger()
@@ -40,13 +40,11 @@ def convert_album(
         bitrate,
         copy_non_sound)
 
-    if num_processes > 1:
-        PP(nodes=num_processes).map(
-            caf,
-            filenames)
-    else:
-        for fn in filenames:
-            caf(fn)
+    do_parallel_with_pbar(
+        caf,
+        filenames,
+        num_processes=num_processes
+    )
 
 def convert_album_file(
     filename,

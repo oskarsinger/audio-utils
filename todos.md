@@ -1,9 +1,3 @@
-# Efficiency
-* Parallelize where possible. Pathos or Celery?
-
-# Dropbox
-* Figure out what happens if I try to write to a path that doesn't exist in Dropbox.
-
 # Database
 * Should probably use Enum for some of the columns like "file_type"
 * Set up explicit relations between AlbumRegistry, ArtistRegsistry, SongRegistry, etc. using `relationship` or `ForeignKey` or something like that.

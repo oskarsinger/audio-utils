@@ -1,8 +1,9 @@
-from pathos.pp import ParallelPool
+from pathos.multiprocessing import ProcessPool
+from tqdm import tqdm
 
 def do_parallel_with_pbar(closure, args, num_processes=6):
 
-    pool = ParallelPool(nodes=num_processes)
+    pool = ProcessPool(nodes=num_processes)
 
     print('STARTING TASKS')
     results = [pool.amap(closure, [arg])
