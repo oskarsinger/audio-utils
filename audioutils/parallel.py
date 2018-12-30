@@ -6,7 +6,7 @@ def do_parallel_with_pbar(closure, args, num_processes=6):
     pool = ProcessPool(nodes=num_processes)
 
     print('STARTING TASKS')
-    results = [pool.amap(closure, [arg])
+    results = [pool.apipe(closure, arg)
                for arg in tqdm(args)]
 
     print('COMPLETING TASKS')
