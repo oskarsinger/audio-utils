@@ -1,5 +1,6 @@
 import os
 
+from pathos.multiprocessing import ProcessPool
 from structlog import get_logger
 from dropbox.exceptions import DropboxException
 from requests.exceptions import (
@@ -97,6 +98,12 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
     )
 
     local_path = os.path.join(media_dir, row['path'][1:])
+
+    os.makedirs(
+        os.path.dirname(local_path),
+        exist_ok=True
+    )
+
     dbx_metadata = dbx.files_download_to_file(
         local_path,
         row['path']
@@ -142,6 +149,8 @@ def unsafe_dropbox_download_file(dbx, row, get_session, media_dir):
     with get_session() as session:
         session.add(registry_obj)
     '''
+
+    return dbx_metadata
 
 
 dropbox_download_file = get_safe_load(

@@ -6,11 +6,13 @@ import yaml
 import logging
 import structlog
 import datetime
+import copy
 
 from os.path import basename, dirname, join, exists
 from collections import defaultdict
 from shutil import move
 from tqdm import tqdm
+from pathos.multiprocessing import ProcessPool
 
 from audioutils.io import unzip_and_save_bandcamp_album
 from audioutils.metadata import get_metadata
@@ -74,6 +76,8 @@ def syncing_cli(ctx, media_dir):
     with open(ok_path) as f:
         oauth_key = f.readline().strip()
 
+    ctx.obj['oauth_key'] = oauth_key
+
     dbx = dropbox.Dropbox(oauth_key)
     db_info_path = os.path.join(
         home,
@@ -84,12 +88,15 @@ def syncing_cli(ctx, media_dir):
     with open(db_info_path, 'r') as f:
         db_info = yaml.load(f)
 
+    db_info.update({'db': 'music'})
+
     ctx.obj['dbx'] = dbx
+    ctx.obj['db_info'] = db_info
     ctx.obj['get_session'] = get_session_maker(
         db_info['user'],
         db_info['password'],
         db_info['host'],
-        'music'
+        db_info['db']
     )
 
 
@@ -179,25 +186,51 @@ def download(ctx):
 
         remote_only_files.extend(incomplete_dbx_paths)
 
+    pool = ProcessPool(nodes=6)
+    oauth_key = ctx.obj['oauth_key']
+    db_info = copy.deepcopy(
+        ctx.obj['db_info']
+    )
+    media_dir = ctx.obj['media_dir']
 
-    for dbx_path in tqdm(remote_only_files):
-        save_path = join(
-            ctx.obj['media_dir'], 
-            dbx_path[1:]
-        )
+    def dropbox_download_closure(dbx_path):
 
-        os.makedirs(
-            dirname(save_path), 
-            exist_ok=True
+        dbx = dropbox.Dropbox(oauth_key)
+        get_session = get_session_maker(
+            db_info['user'],
+            db_info['password'],
+            db_info['host'],
+            db_info['db']
         )
 
         dropbox_download_file(
-            ctx.obj['dbx'],
+            dbx,
             dbx_path,
-            ctx.obj['get_session'],
-            ctx.obj['media_dir']
+            get_session,
+            media_dir
         )
 
+    print('STARTING TASKS')
+    results = [pool.amap(dropbox_download_closure, [rof_path])
+               for rof_path in tqdm(remote_only_files)]
+
+    print('COMPLETING TASKS')
+    total = len(results)
+
+    with tqdm(total=total) as pbar:
+
+        num_ready = 0
+
+        while num_ready < total:
+            
+            ready = [r for r in results
+                     if r.ready()]
+            new_num_ready = len(ready)
+
+            if new_num_ready > num_ready:
+                pbar.update(new_num_ready - num_ready)
+
+            num_ready = new_num_ready
 
 if __name__=='__main__':
     syncing_cli(obj={})
