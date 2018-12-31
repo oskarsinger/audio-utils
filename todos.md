@@ -9,9 +9,13 @@
 * Develop better way to deal with artist metadata (especially ID3 tag) and avoid explicitly specifying directories and songs. Maybe can integrate with Discogs API.
 * Need a way to keep track of which things are on my list of stuff to listen to. Check if beet can do this with a playlist or something like that. OR randomly select a subset of stuff from my lib each time I change up my mp3 player.
 * In general, would be cool to algorithmically select what gets loaded to my mp3 player.
+* Map from beet search results to paths and use that to queue up things to add to my mp3 player.
 
 # Logging
 * Keep tuning and improving the logging. Structlog is really powerful. Let's use its capabilities fully where it helps.
 
 # File Formats
 * Figure out what m4a is and how to convert it to something useful.
+
+# Known Bugs
+* Uploads are not working. Figure this out.

@@ -17,9 +17,8 @@ from audioutils.parallel import do_parallel_with_pbar
 from audioutils.io import unzip_and_save_bandcamp_album
 from audioutils.metadata import get_metadata
 from audioutils.dropbox.utils import (
-    get_all_files,
-    get_full_listdir,
-    get_remote_only_files
+    get_remote_only_files,
+    get_local_only_files
 )
 from audioutils.dropbox.loading import (
     dropbox_download_file,
@@ -56,6 +55,7 @@ structlog.configure(
     processors=[TimeStamper(), JSONRenderer()]
 )
 
+LOGGER = structlog.get_logger()
 DBX_MUSIC_DIR = '/Music'
 
 
@@ -161,11 +161,22 @@ def update(ctx, source, bandcamp):
 @click.pass_context
 def upload(ctx):
 
-    local_paths = None
+    local_only_files = get_local_only_files(
+        ctx.obj['dbx'],
+        ctx.obj['media_dir'],
+        DBX_MUSIC_DIR
+    )
+
+    LOGGER.info(
+        'local_only_files',
+        local_only_files=local_only_files
+    )
 
     with ctx.obj['get_session']() as session:
          rows = session.query(IncompleteDropboxUpload).all()
-         local_paths = [r.path for r in rows]
+         incomplete_dbx_paths = [r.path for r in rows]
+
+    local_only_files.extend(incomplete_dbx_paths)
 
     oauth_key = ctx.obj['oauth_key']
     db_info = copy.deepcopy(
@@ -183,16 +194,16 @@ def upload(ctx):
             db_info['db']
         )
 
-        dropbox_download_file(
+        dropbox_upload_file(
             dbx,
-            dbx_path,
+            local_path,
             get_session,
             media_dir
         )
 
     do_parallel_with_pbar(
         dropbox_upload_closure,
-        local_paths
+        local_only_files
     )
 
 

@@ -8,6 +8,30 @@ from dropbox.files import (
 )
 
 
+def get_local_only_files(dbx, media_dir, dbx_dir):
+
+    search_path = join(
+        media_dir,
+        '**',
+        '*'
+    )
+    local_paths = glob.glob(
+        search_path,
+        recursive=True
+    )
+    local_paths_lower = {p.lower()[len(media_dir):] : p
+                         for p in local_paths}
+    dbx_files = get_all_files(dbx, dbx_dir)
+    dbx_paths = [f.path_lower for f in dbx_files]
+
+    local_only_files = list(
+        set(local_paths_lower.keys()).difference(dbx_paths)
+    )
+
+    return [join(media_dir, local_paths_lower[lof])
+            for lof in local_only_files]
+
+
 def get_remote_only_files(dbx, media_dir, dbx_dir):
 
     search_path = join(
