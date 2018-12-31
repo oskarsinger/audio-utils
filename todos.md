@@ -12,3 +12,6 @@
 
 # Logging
 * Keep tuning and improving the logging. Structlog is really powerful. Let's use its capabilities fully where it helps.
+
+# File Formats
+* Figure out what m4a is and how to convert it to something useful.

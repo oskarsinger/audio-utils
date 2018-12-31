@@ -25,6 +25,11 @@ def get_safe_load(do_load, incomplete_table_class, failed_table_class, exception
 
         try:
             do_load(dbx, row, get_session, media_dir)
+
+            with get_session() as session:
+                session.query(incomplete_table_class).filter(
+                    incomplete_table_class.path == row['path']
+                ).delete()
         except exception_class as e:
             row['error_message'] = str(e)
 
@@ -39,11 +44,6 @@ def get_safe_load(do_load, incomplete_table_class, failed_table_class, exception
                     failed_table_class,
                     **row
                 )
-
-        with get_session() as session:
-            session.query(incomplete_table_class).filter(
-                incomplete_table_class.path == row['path']
-            ).delete()
         
     return safe_load
 

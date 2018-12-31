@@ -34,8 +34,14 @@ from audioutils.db.tables import (
 logfile_name = 'log_{}.txt'.format(
     datetime.datetime.now()
 )
+logfile_path = os.path.join(
+    pathlib.Path.home(),
+    '.audioutils',
+    'logs',
+    logfile_name
+)
 logging.basicConfig(
-    filename=logfile_name,
+    filename=logfile_path,
     level=logging.DEBUG    
 )
 
@@ -233,6 +239,7 @@ def download(ctx):
         dropbox_download_closure,
         remote_only_files
     )
+
 
 if __name__=='__main__':
     syncing_cli(obj={})

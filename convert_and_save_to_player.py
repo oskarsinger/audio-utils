@@ -1,9 +1,40 @@
 #!/usr/bin/env python
 
+import os
 import click
+import datetime
+import logging
+import structlog
+import pathlib
 
 from audioutils.io import get_and_make_artist_and_album_dirs
 from audioutils.conversion import convert_album
+
+
+logfile_name = 'log_{}.txt'.format(
+    datetime.datetime.now()
+)
+logfile_path = os.path.join(
+    pathlib.Path.home(),
+    '.audioutils',
+    'logs',
+    logfile_name
+)
+logging.basicConfig(
+    filename=logfile_path,
+    level=logging.DEBUG    
+)
+
+from structlog.stdlib import LoggerFactory
+from structlog.processors import (
+    JSONRenderer,
+    TimeStamper
+)
+
+structlog.configure(
+    logger_factory=LoggerFactory(),
+    processors=[TimeStamper(), JSONRenderer()]
+)
 
 @click.command()
 @click.option('--source')
