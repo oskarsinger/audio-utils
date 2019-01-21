@@ -17,8 +17,9 @@ def get_and_make_artist_and_album_dirs(artist, album, target):
 
 def unzip_and_save_bandcamp_album(source, target):
 
-    name = splitext(basename(source))[0] 
-    (artist, album) = name.split(' - ')
+    name = splitext(basename(source))[0]
+    splits = name.lower().split(' - ')
+    (artist, album) = (splits[0], ''.join(splits[1:]))
     (_, target_album_path) = get_and_make_artist_and_album_dirs(
         artist,
         album,
