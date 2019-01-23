@@ -1,16 +1,18 @@
 import os
 import zipfile
+import sys
 
 from os.path import basename, splitext, join, exists
 
 
 def get_and_make_artist_and_album_dirs(artist, album, target):
 
+    print('Inside dir getter')
     artist_dir = join(target, artist)
     album_dir = join(artist_dir, album)
 
     if not exists(album_dir):
-        os.makedirs(album_dir)
+        os.makedirs(album_dir, exist_ok=True)
 
     return (artist_dir, album_dir)
 

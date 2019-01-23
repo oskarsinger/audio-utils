@@ -1,6 +1,14 @@
 from pathos.multiprocessing import ProcessPool
 from tqdm import tqdm
 
+def do_parallel(closure, args, num_processes=6):
+
+    print('Inside do_parallel')
+
+    pool = ProcessPool(nodes=num_processes)
+    result = pool.amap(closure, args)
+
+
 def do_parallel_with_pbar(closure, args, num_processes=6):
 
     pool = ProcessPool(nodes=num_processes)

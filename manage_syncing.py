@@ -30,7 +30,7 @@ from audioutils.db.tables import (
     IncompleteDropboxUpload
 )
 
-logfile_name = 'log_{}.txt'.format(
+logfile_name = 'manage_dropbox_log_{}.txt'.format(
     datetime.datetime.now()
 )
 logfile_path = os.path.join(
